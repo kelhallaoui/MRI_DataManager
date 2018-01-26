@@ -1,9 +1,11 @@
-from DataPreProcessing.utilities import extractNIFTI, readCSV
-from DataPreProcessing.ExtractData import extractSlice, resizeImage, transform_to_k_space, plot_k_space
+from DataManager.utilities import extractNIFTI, readCSV
+from DataManager.PreProcessData import inject_phase_map, generate_synthetic_phase_map, extractSlice, resizeImage, transform_to_k_space, plot_complex_image
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import numpy as np
+import cmath
+import os
 
 
 df = readCSV(r'C:/Users/eee/workspace_python/Image Reconstruction/data/ADNI/dataset_metadata.csv', \
@@ -12,7 +14,7 @@ df = readCSV(r'C:/Users/eee/workspace_python/Image Reconstruction/data/ADNI/data
 #print(df[0:10])
 #print(df.dtypes)
 
-for subject_id in df[0:1]['Subject']:
+for subject_id in df[0:4]['Subject']:
 	print('Subject id: ', subject_id)
 
 # Get the T1-weighted MRI image from the datasource and the current subject_id
@@ -20,18 +22,40 @@ data, aff, hdr = extractNIFTI(r'C:/Users/eee/workspace_python/Image Reconstructi
 
 print('Data size:', data.shape)
 
-print(aff)
-
 # Extract the slice
-axial_slice = 200
+axial_slice = 0.6
 img = extractSlice(data, axial_slice)
-plt.imshow(img.T, cmap = 'gray')
-#plt.show()
-
 img = resizeImage(img, 128)
+print('Image')
+print('Min', np.amin(img))
+print('Max', np.amax(img))
 
-print(img.shape)
+phase_map = generate_synthetic_phase_map(128)
+print('Phase map')
+print('Min', np.amin(phase_map))
+print('Max', np.amax(phase_map))
+#plot_complex_image(phase_map.T)
 
-k_img = transform_to_k_space(img)
+#print(phase_map)
 
-plot_k_space(k_img)
+# ix = 1
+# for i in range(1,8):
+# 	for j in range(1,8):
+# 		plt.subplot(7, 7, ix)
+# 		plt.imshow(generate_synthetic_phase_map(128), cmap = 'gray')
+# 		#plt.colorbar()
+# 		ix += 1
+# plt.show()
+
+img = inject_phase_map(img, phase_map)
+
+print('Magnitude')
+print('Min', np.amin(np.abs(img)))
+print('Max', np.amax(np.abs(img)))
+
+print('Angle')
+print('Min', np.amin(np.angle(img)))
+print('Max', np.amax(np.angle(img)))
+
+plot_complex_image(img.T)
+plot_complex_image(transform_to_k_space(img).T, 'polar', 'log')

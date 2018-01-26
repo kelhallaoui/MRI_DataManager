@@ -1,13 +1,15 @@
 import numpy as np 
 import h5py
-from DataPreProcessing.utilities import write_data
+from DataManager.utilities import write_data
+from DataManager.DataManager import DataManager
 
-a = np.random.random(size=(100,20))
-b = np.random.random(size=(100,))
+dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-write_data(a, b, "wowow.h5")
+coll = dataManager.getDataCollection()
 
+print(dataManager.getData('ADNI', 'Subject'))
 
+dataManager.viewSubject('ADNI', 100206, 0.6)
 
 
 

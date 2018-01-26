@@ -5,6 +5,7 @@ import pandas as pd
 import zipfile
 import gzip
 import h5py
+import shutil
 
 def readCSV(filename, use_cols):
 	""" Reads a CSV into a pandas dataframe.
@@ -40,14 +41,22 @@ def extractNIFTI(filepath, subject_id):
 		raise NameError('Not a valid .zip file.')
 
 	# Open the zip file
-	with zipfile.ZipFile(zip_filename) as zf:
+	with zipfile.ZipFile(zip_filename, 'r') as zf:
 		# If the internal file is not found.
 		if not filename in zf.namelist():
 			raise NameError('Filename not found in the zipfile!')
 
-		# Extract the NIFTI file
+		# Extract the NIFTI file and read its contents
+		####################### Need FIX ###################################
+		# File is currently extracted to the root directory 
+		# The NIFTI file is then read from this file. 
+		#
+		# The nib.load(filename) function looks is os.path.exists(filename)
+		# This function returns false when .zip is found in the filename
+		####################################################################
 		file = zf.extract(filename)
 		data, aff, hdr = openNIFTI(file)
+		shutil.rmtree(str(subject_id) + '/') # Delete the file in the root
 		return data, aff, hdr
 
 def openNIFTI(filename):
@@ -60,6 +69,7 @@ def openNIFTI(filename):
         data (3D numpy): the 3d volume of the image
         hdr_data: header of the NIFTI file
     """
+    print('FILENAME NIFTI', filename)
     img_mri = nib.load(filename)
     data = img_mri.get_data()
     aff = img_mri.affine
