@@ -72,6 +72,8 @@ def generate_synthetic_phase_map(kernel_size = 128, setting = 'sinusoid'):
 		return phase_map
 
 def inject_phase_map(img, phase_map):
+	""" Add a phase map to a real image
+	"""
 	def polar2z(r,theta):
 		return r * np.exp( 1j * theta )
 

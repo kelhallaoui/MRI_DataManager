@@ -18,12 +18,12 @@ for subject_id in df[0:4]['Subject']:
 	print('Subject id: ', subject_id)
 
 # Get the T1-weighted MRI image from the datasource and the current subject_id
-data, aff, hdr = extractNIFTI(r'C:/Users/eee/workspace_python/Image Reconstruction/data/ADNI/MRI data/', 100206)
+data, aff, hdr = extractNIFTI(r'C:/Users/eee/workspace_python/Image Reconstruction/data/ADNI/MRI data/', 100610)
 
 print('Data size:', data.shape)
 
 # Extract the slice
-axial_slice = 0.6
+axial_slice = 0.50
 img = extractSlice(data, axial_slice)
 img = resizeImage(img, 128)
 print('Image')
@@ -58,4 +58,4 @@ print('Min', np.amin(np.angle(img)))
 print('Max', np.amax(np.angle(img)))
 
 plot_complex_image(img.T)
-plot_complex_image(transform_to_k_space(img).T, 'polar', 'log')
+#plot_complex_image(transform_to_k_space(img).T, 'polar', 'log')

@@ -56,7 +56,7 @@ def extractNIFTI(filepath, subject_id):
 		####################################################################
 		file = zf.extract(filename)
 		data, aff, hdr = openNIFTI(file)
-		shutil.rmtree(str(subject_id) + '/') # Delete the file in the root
+		shutil.rmtree(str(subject_id) + '/', ignore_errors=True) # Delete the file in the root
 		return data, aff, hdr
 
 def openNIFTI(filename):
@@ -76,8 +76,15 @@ def openNIFTI(filename):
     hdr_data = img_mri.header
     return data, aff, hdr_data
 
-def write_data(X, Y, filename, metadata = None):
-	f = h5py.File(filename, "w")
-	f.create_dataset('features', data=X)
-	f.create_dataset('labels', data=Y)
-	f.close()
+def write_data(databases, attributes, filename):
+	hf = h5py.File(filename, "w")
+
+	for attribute in attributes:
+		print(attribute, ': ', attributes[attribute])
+		hf.attrs[attribute] = attributes[attribute]
+
+	for database in databases:
+		print(database, ': ', databases[database].shape)
+		hf.create_dataset(database, data=databases[database])
+
+	hf.close()
