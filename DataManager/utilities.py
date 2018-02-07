@@ -6,6 +6,7 @@ import zipfile
 import gzip
 import h5py
 import shutil
+import os
 
 def readCSV(filename, use_cols):
 	""" Reads a CSV into a pandas dataframe.
@@ -77,7 +78,10 @@ def openNIFTI(filename):
     return data, aff, hdr_data
 
 def write_data(databases, attributes, filename):
-	hf = h5py.File(filename, "w")
+	if not os.path.exists('experiments/'):
+		os.makedirs('experiments/')
+
+	hf = h5py.File('experiments/'+filename+'.h5', "w")
 
 	for attribute in attributes:
 		print(attribute, ': ', attributes[attribute])

@@ -24,13 +24,14 @@ print('Data size:', data.shape)
 
 # Extract the slice
 axial_slice = 0.50
+img_size = 64
 img = extractSlice(data, axial_slice)
-img = resizeImage(img, 128)
+img = resizeImage(img, img_size)
 print('Image')
 print('Min', np.amin(img))
 print('Max', np.amax(img))
 
-phase_map = generate_synthetic_phase_map(128)
+phase_map = generate_synthetic_phase_map(img_size)
 print('Phase map')
 print('Min', np.amin(phase_map))
 print('Max', np.amax(phase_map))

@@ -4,6 +4,14 @@ from DataManager.utilities import extractNIFTI
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
+	""" Extracts features from a dataCollection
+
+	Attrs
+		option (string): what features to extract
+		slice_ix (int): what slice to extract
+		img_shape (int): size of the images
+		sequence (int): how many subsequent slices to extract
+	"""
 
 	def __init__(self, option = 'image_and_k_space', slice_ix = 0.52, img_shape = 128, sequence = 1):
 		self.option = option
@@ -12,6 +20,12 @@ class FeatureExtractor(object):
 		self.sequence = sequence
 
 	def extractFeatureSet(self, subjects, dataset, filepath):
+		if self.option is 'image_and_k_space':
+			data_img_space, data_k_space = self.extractFeature_image_and_k_space(subjects, dataset, filepath)
+			return data_img_space, data_k_space
+
+
+	def extractFeature_image_and_k_space(self, subjects, dataset, filepath):
 		# Count the number of valid brains in the dataset
 		batch_size = 0
 		for subject_id in subjects:
@@ -39,6 +53,9 @@ class FeatureExtractor(object):
 					print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
 
 		return data_img_space, data_k_space
+
+
+
 
 	def extract_image_and_k_space(self, data, slice_ix):
 		""" Extracts the image space and k-space data

@@ -5,7 +5,6 @@ from DataManager.utilities import extractNIFTI, readCSV, write_data
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
-import zipfile
 
 class DataManager(object):
 	""" Organization of the data
@@ -15,22 +14,33 @@ class DataManager(object):
 	fetch the data from these different sources and combine them.
 
 	Attrs:
-		filepath (string): Filepath to the root folder where the datasets are stored
-		                   Requried file structure
-		                      - filepath
-		                         - ADNI (folder)
-		                            - MRI data (folder): contains the NIFTI files
-		                            - dataset_metadata.csv: file comtaining metadata
 		dataCollection (dictionary): Contains the metadata for all the datasets stored indexed by 
 		                             the name of the dataset.
 		data_splits (dictionary): Contains the train/validation/test indices for each of the 
 		                          datasets in dataCollection.
+		information (dictionary): Contains information about the dataset 
+		                          [0]: filepath to the metadata
+		                          [1]: filepath to the data*
+		                          [2]: indices to extract in the metadata
+		                          [3]: key for the index in the dataset
+
+		                          * filepath (string): Filepath to the root folder where datasets stored
+		                   		  Requried file structure
+		                      		- filepath
+		                         		- ADNI (folder)
+		                            		- MRI data (folder): contains the NIFTI files
+		                            		- dataset_metadata.csv: file comtaining metadata
 	"""
 
 	def __init__(self, filepath, datasets = None):
-		self.filepath = filepath
-		self.dataCollection = None
-		self.data_splits = None
+		self.dataCollection = {}
+		self.data_splits = {}
+
+		# Information about the datasets as a dictionary
+		self.information = {'ADNI': [filepath + 'ADNI/dataset_metadata.csv', 
+									 filepath + r'ADNI/MRI data/', 
+									 [0, 3, 4, 6],
+									 'Subject']}
 		# Add the datasets that are listed to the data collection
 		self.addDatasets(datasets)
 
@@ -42,23 +52,24 @@ class DataManager(object):
 										to add to the collection.
 		"""
 		for dataset in datasets:
-			filepath = self.filepath + str(dataset) + '/dataset_metadata.csv'
-			if self.dataCollection is None:
-				if dataset is 'ADNI': 
-					self.dataCollection = {str(dataset): readCSV(filepath, [0, 3, 4, 6])}
-					self.train_validate_test_split(dataset, 'Subject')
-			else:
-				if dataset is 'ADNI': self.dataCollection[str(dataset)] = readCSV(filepath, [0, 3, 4, 6])
+			filepath = self.information[dataset][0]
+			indices = self.information[dataset][2]
+			key = self.information[dataset][3]
+			# Add dataset to the collection
+			self.dataCollection.update({str(dataset): readCSV(filepath, indices)})
+			self.train_validate_test_split(dataset, key)
 
-	def train_validate_test_split(self, dataset, column_header, train_percent=.6, validate_percent=.2, seed=None):
+	def train_validate_test_split(self, dataset, column_header, train_percent=.6, valid_percent=.2, seed=None):
 		"""Splits up the index associated with the dataset into a train/validation/test set
 		
+		Adds a new train/validation/test set to the data_splits dictionary.
+
 		Args:
 			dataset (string): Name of the dataset in question
 			column_header (string): Name of the column header with the index
-
-		Returns:
-			Adds a new train/validation/test set to the data_splits dictionary.
+			train_percent (float): percentage of the data to reserve for training [0, 1]
+			valid_percent (float): percentage of the data for validation [0, 1]
+			seed (int): means by which to generate the random shuffling of the data
 		"""
 		if not seed is None: np.random.seed(seed)
 		
@@ -66,39 +77,43 @@ class DataManager(object):
 		perm = np.random.permutation(data)
 		m = len(data)
 
+		# Get the split indices
 		train_end = int(train_percent * m)
-		validate_end = int(validate_percent * m) + train_end
+		valid_end = int(valid_percent * m) + train_end
+		train, valid, test = perm[:train_end], perm[train_end:valid_end], perm[valid_end:]
 
-		train = perm[:train_end]
-		validate = perm[train_end:validate_end]
-		test = perm[validate_end:]
-		if self.data_splits is None:
-			self.data_splits = {str(dataset): [train, validate, test]}
-		else:
-			self.data_splits[str(dataset)] = [train, validate, test]
-		return
+		self.data_splits.update({str(dataset): [train, valid, test]})
 
-	def compileDataset(self, dataset, option = 'image_and_k_space', slice_ix = 0.52, img_shape = 128):
+
+	def compileDataset(self, database_name, dataset, option = 'image_and_k_space', slice_ix = 0.52, img_shape = 128):
 		""" Extracts the features for the datasets and compiles them into a database
 
 		Args:
 			dataset (string): the dataset from which to extract features. 
+			option (string): Option for determining what features to extract
+							 - 'image_and_k_space': generate a database with image space and k-space
 
 		"""
 		# Extract features 
 		featureExtractor = FeatureExtractor(option, slice_ix = slice_ix, img_shape = img_shape, sequence = 3)
 
-		if dataset is 'ADNI': 
-			filepath = self.filepath + r'ADNI/MRI data/'
-			key = 'Subject'
+		filepath = self.information[dataset][1]
 
-		subjects = self.dataCollection[dataset][key]
-		data_img_space, data_k_space = featureExtractor.extractFeatureSet(subjects[0:2], dataset, filepath)
+		# Description of the dataset that is being generated
+		attributes = {'option': option, 
+					  'dataset': dataset, 
+					  'slice_ix': slice_ix, 
+					  'img_size': img_shape}
 
-		databases = {'image_space': data_img_space, 'k_space': data_k_space}
-		attributes = {'dataset': dataset, 'slice_ix': slice_ix, 'img_size': img_shape}
+		# Generate the databases
+		databases = {}
+		for ix, i in enumerate(['train', 'validation', 'test']):
+			subjects = self.data_splits[dataset][ix]
+			features, targets = featureExtractor.extractFeatureSet(subjects[0:2], dataset, filepath)
+			databases.update({'X_'+i: features, 'Y_'+i: targets})
 
-		write_data(databases, attributes, 'data.h5')
+		# Write the datasets to the .h5 database file
+		write_data(databases, attributes, database_name)
 
 	def getDataCollection(self):
 		return self.dataCollection
@@ -113,10 +128,11 @@ class DataManager(object):
 			return self.dataCollection[dataset].keys()
 
 	def viewSubject(self, dataset, subject_id, slice_ix = 0.5):
-		if dataset is 'ADNI':
-			# Get the T1-weighted MRI image from the datasource and the current subject_id
-			data, aff, hdr = extractNIFTI(self.filepath + r'ADNI/MRI data/', subject_id)
-			img = extractSlice(data, slice_ix)
-			plt.imshow(img.T, cmap = 'gray')
-			plt.colorbar()
-			plt.show()
+		filepath = self.information[dataset][1]
+
+		# Get the T1-weighted MRI image from the datasource and the current subject_id
+		data, aff, hdr = extractNIFTI(filepath, subject_id)
+		img = extractSlice(data, slice_ix)
+		plt.imshow(img.T, cmap = 'gray')
+		plt.colorbar()
+		plt.show()
