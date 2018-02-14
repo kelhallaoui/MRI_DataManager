@@ -1,6 +1,5 @@
 import numpy as np 
 import h5py
-from DataManager.utilities import write_data
 from DataManager.DataManager import DataManager
 
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
@@ -14,14 +13,17 @@ dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/d
 
 #print(dataManager.data_splits['ADNI'][2].shape)
 
-dataManager.compileDataset('data', 'ADNI')
+#dataManager.compileDataset('data', 'ADNI')
 
+data = {}
+hf = h5py.File('experiments/data.h5', 'r')
+print([key for key in hf.keys()])
+for key in hf.keys():
+	print(key)
+	vals = list(hf[key])
+	data.update({key: np.asarray(vals)})
+hf.close()
 
-#hf = h5py.File('data.h5', 'r')
-#print([key for key in hf.keys()])
-#data = np.array(hf.get('image_space_train'))
-#hf.close()
+print(list(data.keys()))
 
-#print(data.shape)
-
-#print(data[700, :, :])
+print(data['X_validation'].shape)

@@ -1,8 +1,12 @@
-from ModelManager.ModelManager import *
+from ExperimentManager.ExperimentManager import *
 
-modelManager = ModelManager()
-modelManager.build_model((28,28))
+expManager = ExperimentManager('experiments/data.h5')
 
-print(modelManager.getModel().summary())
+print(list(expManager.getData().keys()))
 
+expManager.build_model((128,128), 'autoencoder')
+
+print(expManager.getModel().summary())
+
+expManager.fit_model(5, 1)
 

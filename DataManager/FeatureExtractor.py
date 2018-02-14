@@ -1,6 +1,6 @@
 import numpy as np
 import zipfile
-from DataManager.utilities import extractNIFTI
+from Utilities.utilities import extractNIFTI
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):

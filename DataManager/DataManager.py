@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from DataManager.utilities import extractNIFTI, readCSV, write_data
+from Utilities.utilities import extractNIFTI, readCSV, write_data
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
