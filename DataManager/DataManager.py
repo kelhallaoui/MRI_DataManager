@@ -95,7 +95,7 @@ class DataManager(object):
 
 		"""
 		# Extract features 
-		featureExtractor = FeatureExtractor(option, slice_ix = slice_ix, img_shape = img_shape, sequence = 3)
+		featureExtractor = FeatureExtractor(option, slice_ix = slice_ix, img_shape = img_shape, sequence = 30)
 
 		filepath = self.information[dataset][1]
 
@@ -109,7 +109,7 @@ class DataManager(object):
 		databases = {}
 		for ix, i in enumerate(['train', 'validation', 'test']):
 			subjects = self.data_splits[dataset][ix]
-			features, targets = featureExtractor.extractFeatureSet(subjects[0:2], dataset, filepath)
+			features, targets = featureExtractor.extractFeatureSet(subjects, dataset, filepath)
 			databases.update({'X_'+i: features, 'Y_'+i: targets})
 
 		# Write the datasets to the .h5 database file

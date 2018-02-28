@@ -97,6 +97,22 @@ def transform_to_k_space(img):
 	freq = np.fft.fft2(img)
 	return np.fft.fftshift(freq)
 
+def introduce_gibbs_artifact(img, percent):
+	################ NEED TO CLEAN THIS FUNCTION #############################
+	dims = img.shape
+	mask = np.ones(dims)
+
+	freq = transform_to_k_space(img)
+
+	percent = percent
+	N = np.count_nonzero(mask!=0) - int(round(percent*mask.size))
+	np.put(mask, np.random.choice(np.flatnonzero(mask), size=N, replace=False), 0)
+	mask[dims[0]//4 : (3*dims[0]//4), dims[1]//4 : (3*dims[1]//4)] = 0
+
+	freq = freq * -1*(mask-1)
+	img = np.fft.ifft2(freq)
+	return np.abs(img)
+
 def plot_complex_image(img, mode = 'polar', setting = None):
 	""" Plots the real and imaginary part of an image side by side
 

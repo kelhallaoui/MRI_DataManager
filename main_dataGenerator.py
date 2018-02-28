@@ -13,10 +13,13 @@ dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/d
 
 #print(dataManager.data_splits['ADNI'][2].shape)
 
-#dataManager.compileDataset('data', 'ADNI')
+#dataManager.compileDataset('data_ext', 'ADNI', option = 'image_and_k_space', slice_ix = 0.52, img_shape = 64)
+
+dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
+
 
 data = {}
-hf = h5py.File('experiments/data.h5', 'r')
+hf = h5py.File('experiments/data_ext.h5', 'r')
 print([key for key in hf.keys()])
 for key in hf.keys():
 	print(key)

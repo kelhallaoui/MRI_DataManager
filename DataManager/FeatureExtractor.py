@@ -23,6 +23,9 @@ class FeatureExtractor(object):
 		if self.option is 'image_and_k_space':
 			data_img_space, data_k_space = self.extractFeature_image_and_k_space(subjects, dataset, filepath)
 			return data_img_space, data_k_space
+		elif self.option is 'image_and_gibbs':
+			data_img_gibbs, data_gibbs = self.extractFeature_image_and_gibbs(subjects, dataset, filepath)
+			return data_img_gibbs, data_gibbs
 
 
 	def extractFeature_image_and_k_space(self, subjects, dataset, filepath):
@@ -75,3 +78,52 @@ class FeatureExtractor(object):
 		img = inject_phase_map(img, phase_map)
 		k_space_img = transform_to_k_space(img)
 		return img, k_space_img
+
+	def extractFeature_image_and_gibbs(self, subjects, dataset, filepath):
+		# Count the number of valid brains in the dataset
+		batch_size = 0
+		for subject_id in subjects:
+			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
+			if zipfile.is_zipfile(zip_filename): batch_size += 1
+		print('Total subjects: ', batch_size)
+
+		# Set containers in which to store the data
+		data_img = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+		data_img_gibbs = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+		data_gibbs = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+
+		# Extract the data
+		batch_ix = 0
+		for subject_id in subjects:
+			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
+			if zipfile.is_zipfile(zip_filename):
+				# Get the T1-weighted MRI image from the datasource and the current subject_id
+				data, aff, hdr = extractNIFTI(filepath, subject_id)
+				for i in range(self.sequence):
+					img, gibbs_img, gibbs = self.extract_image_and_gibbs(data, self.slice_ix + i*0.003125)
+					data_img[batch_ix] = img
+					data_img_gibbs[batch_ix] = gibbs_img
+					data_gibbs[batch_ix] = gibbs
+					batch_ix += 1
+
+					print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
+
+		return data_img_gibbs, data_gibbs
+
+	def extract_image_and_gibbs(self, data, slice_ix):
+		""" Extracts the image space and k-space data
+
+		Args:
+			data (3D numpy matrix): The volume image
+			slice_ix (int): A number between [0, 1] detailing the slice to extract
+		
+		Returns:
+			img: The complex image space
+			k_space_img: The complex k-space
+		"""
+		# Extract the slice
+		img = extractSlice(data, slice_ix)
+		img = resizeImage(img, self.img_shape)
+		gibbs_img = introduce_gibbs_artifact(img, 0.8)
+		gibbs = gibbs_img - img
+		return img, gibbs_img, gibbs
