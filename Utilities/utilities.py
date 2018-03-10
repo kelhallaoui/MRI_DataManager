@@ -21,27 +21,33 @@ def readCSV(filename, use_cols):
 	df = pd.read_csv(filename, usecols=use_cols)
 	return df
 
-def extractNIFTI(filepath, subject_id):
+def extractNIFTI(filepath, subject_id, scan_type = 'T1'):
 	""" Open a zip file and read a file within it
 
 	Args: 
 		zip_filename (string): Absolute filename
 		filename (string): filename of the file inside the zip
+		scan_type (strng): The acquisition type to extract ('T1' or 'T2')
 
 	Returns: 
 		data
 	"""
 	print('Filepath: ', filepath + str(subject_id) + '_3T_Structural_unproc.zip')
 	zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-	filename = str(subject_id) + '/unprocessed/3T/T1w_MPR1/' + str(subject_id) + '_3T_T1w_MPR1.nii.gz'
-	print('Filename: ', str(subject_id) + '/unprocessed/3T/T1w_MPR1/' + str(subject_id) + '_3T_T1w_MPR1.nii.gz')
-
-
 	# If the zip file is not found.
 	if not zipfile.is_zipfile(zip_filename):
 		raise NameError('Not a valid .zip file.')
 
 	# Open the zip file
+	if scan_type == 'T1':
+		filename = str(subject_id) + '/unprocessed/3T/T1w_MPR1/' + \
+		           str(subject_id) + '_3T_T1w_MPR1.nii.gz'
+	elif scan_type == 'T2':
+		filename = str(subject_id) + '/unprocessed/3T/T2w_SPC1/' + \
+		           str(subject_id) + '_3T_T2w_SPC1.nii.gz'
+	else: raise NameError('Invalid acquisition. Either \'T1\' or \'T2\'')
+		       
+	print('Filename: ', filename)
 	with zipfile.ZipFile(zip_filename, 'r') as zf:
 		# If the internal file is not found.
 		if not filename in zf.namelist():

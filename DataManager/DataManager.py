@@ -95,7 +95,10 @@ class DataManager(object):
 
 		"""
 		# Extract features 
-		featureExtractor = FeatureExtractor(option, slice_ix = slice_ix, img_shape = img_shape, sequence = 30)
+		featureExtractor = FeatureExtractor(option, 
+											slice_ix = slice_ix, 
+											img_shape = img_shape, 
+											sequence = 30)
 
 		filepath = self.information[dataset][1]
 
@@ -127,11 +130,11 @@ class DataManager(object):
 		if dataset in self.dataCollection:
 			return self.dataCollection[dataset].keys()
 
-	def viewSubject(self, dataset, subject_id, slice_ix = 0.5):
+	def viewSubject(self, dataset, subject_id, slice_ix = 0.5, scan_type = 'T1'):
 		filepath = self.information[dataset][1]
 
 		# Get the T1-weighted MRI image from the datasource and the current subject_id
-		data, aff, hdr = extractNIFTI(filepath, subject_id)
+		data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
 		img = extractSlice(data, slice_ix)
 		plt.imshow(img.T, cmap = 'gray')
 		plt.colorbar()

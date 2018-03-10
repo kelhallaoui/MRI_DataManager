@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from skimage.transform import downscale_local_mean
 import numpy as np
 import scipy as scipy
+import scipy.ndimage
 
 def extractSlice(data, slice_ix, orientation = 'axial'):
 	""" Extract a slice from a volumetric image
@@ -112,6 +113,42 @@ def introduce_gibbs_artifact(img, percent):
 	freq = freq * -1*(mask-1)
 	img = np.fft.ifft2(freq)
 	return np.abs(img)
+
+def add_tumor(img):
+	shape = img.shape
+
+	# Random range for the tumor position
+	shift_x = np.random.uniform(-1*int(shape[0]//4),int(shape[0]//4))
+	shift_y = np.random.uniform(-1*int(shape[1]//4),int(shape[1]//4))
+
+	# Distortion of the x and y axis to get a oval
+	dist_x, dist_y= np.random.uniform(0.5,1.5), np.random.uniform(0.5,1.5)
+
+	# Create the matrix within which we will create the tumor
+	x = np.arange(-shape[0]//2, shape[0]//2, 1)
+	y = np.arange(-shape[1]//2, shape[1]//2, 1)
+	xx, yy = np.meshgrid(x, y, sparse=True)
+
+	# The circular tumor
+	z = (dist_x*(xx+shift_x))**2 + (dist_y*(yy+shift_y))**2
+	rad = 0.05*shape[0]
+
+	# Intensity of the pixels associated with the blood and the tumor
+	blood = np.random.uniform(0.8,1)
+	tumor = np.random.uniform(0.5,0.8)
+
+	# Size of the blood and tumor regions
+	blood_r = np.random.uniform(1.8,2.2)
+	tumor_r = np.random.uniform(0.5,1)
+
+	m = np.max(img)
+	img[z<int(blood_r*rad**2)] = blood*m
+	img[z<int(tumor_r*rad**2)] = tumor*m
+	
+	# Add a smoothing function to the real and imaginary part 
+	img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
+															 2, mode='constant')
+	return img
 
 def plot_complex_image(img, mode = 'polar', setting = None):
 	""" Plots the real and imaginary part of an image side by side
