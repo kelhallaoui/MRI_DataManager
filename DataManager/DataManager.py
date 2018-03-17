@@ -112,8 +112,9 @@ class DataManager(object):
 		databases = {}
 		for ix, i in enumerate(['train', 'validation', 'test']):
 			subjects = self.data_splits[dataset][ix]
-			features, targets = featureExtractor.extractFeatureSet(subjects, dataset, filepath)
-			databases.update({'X_'+i: features, 'Y_'+i: targets})
+			data = featureExtractor.extractFeatureSet(subjects, dataset, filepath)
+			# Give a name to each of the data entries
+			for d in data: databases.update({i + '_' + d: data[d]})
 
 		# Write the datasets to the .h5 database file
 		write_data(databases, attributes, database_name)

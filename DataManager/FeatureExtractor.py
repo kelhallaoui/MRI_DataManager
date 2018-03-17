@@ -29,8 +29,8 @@ class FeatureExtractor(object):
 			return data_img_gibbs, data_gibbs
 
 		elif self.option is 'add_tumor':
-			data_img, data_label = self.extractFeature_add_tumor(subjects, dataset, filepath)
-			return data_img, data_label
+			data_img, data_k_space, data_label = self.extractFeature_add_tumor(subjects, dataset, filepath)
+			return {'image': data_img, 'k_space': data_k_space, 'label': data_label}
 
 	def extractFeature_image_and_k_space(self, subjects, dataset, filepath, scan_type = 'T1'):
 		# Count the number of valid brains in the dataset
@@ -138,8 +138,10 @@ class FeatureExtractor(object):
 		print('Total subjects: ', batch_size)
 
 		# Set containers in which to store the data
-		data_k_space_img = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+		data_shape = (self.sequence*batch_size, self.img_shape, self.img_shape)
+		data_img = np.zeros(data_shape, dtype=complex)
 		data_label = np.zeros((self.sequence*batch_size, 1,), dtype=int)
+		data_k_space = []
 
 		# Extract the data
 		batch_ix = 0
@@ -149,13 +151,15 @@ class FeatureExtractor(object):
 				# Get the T1-weighted MRI image from the datasource and the current subject_id
 				data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
 				for i in range(self.sequence):
-					k_space_img, label = self.extract_image_add_tumor(data, self.slice_ix + i*0.003125)
-					data_k_space_img[batch_ix] = k_space_img
+					img, k_space_img, label = self.extract_image_add_tumor(data, self.slice_ix + i*0.003125)
+
+					data_img[batch_ix] = img
+					data_k_space.append(k_space_img)
 					data_label[batch_ix] = label
 					batch_ix += 1
 
 					print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
-		return data_k_space_img, data_label
+		return data_img, np.asarray(data_k_space), data_label
 
 	def extract_image_add_tumor(self, data, slice_ix):
 		""" Extracts the image space and k-space data
@@ -176,7 +180,7 @@ class FeatureExtractor(object):
 		if label == 1:
 			img = add_tumor(img)
 
-		phase_map = generate_synthetic_phase_map(self.img_shape)
-		img = inject_phase_map(img, phase_map)
-		k_space_img = transform_to_k_space(img)
-		return k_space_img, label
+		#phase_map = generate_synthetic_phase_map(self.img_shape)
+		#img = inject_phase_map(img, phase_map)
+		k_space_img = transform_to_k_space(img, acquisition = 'radial', sampling_percent = 0.5)
+		return img, k_space_img, label

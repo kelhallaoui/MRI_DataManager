@@ -2,6 +2,8 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from skimage.transform import downscale_local_mean
+from pynufft.pynufft import NUFFT_cpu
+from copy import deepcopy
 import numpy as np
 import scipy as scipy
 import scipy.ndimage
@@ -85,7 +87,7 @@ def inject_phase_map(img, phase_map):
 	img = polar2z(polar_img[0], phase_map)
 	return img
 
-def transform_to_k_space(img):
+def transform_to_k_space(img, acquisition = 'cartesian', sampling_percent = 1):
 	""" Transforms the image to the k-space and shifts the 0-freq to the 
 	center.
 
@@ -95,8 +97,32 @@ def transform_to_k_space(img):
 	Returns 
 		A complex 2D matrix with the FFT.
 	"""
-	freq = np.fft.fft2(img)
-	return np.fft.fftshift(freq)
+	if acquisition == 'cartesian':
+		freq = np.fft.fft2(img)
+		return np.fft.fftshift(freq)
+	elif acquisition == 'radial':
+
+		n = img.shape[0]
+		total = int(sampling_percent*n*np.pi/2)
+
+		angles = np.repeat(np.arange(0, np.pi, np.pi/total), n)
+		radii = np.asarray(list(np.linspace(-1,1,n)) * total)
+		om = np.asarray([[r*np.cos(a), r*np.sin(a)] for r, a in zip(radii, angles)])
+		om = om * np.pi
+
+		NufftObj = NUFFT_cpu()
+		Nd = (n, n)		# image size
+		Kd = (2*n, 2*n)	# k-space size
+		Jd = (2, 2)  	# interpolation size
+		NufftObj.plan(om, Nd, Kd, Jd)
+
+		img = img/np.max(img[:])
+		y = NufftObj.forward(img)
+		return y.reshape((total, n))
+
+	else:
+		raise NameError('Undefined acquisition type! \
+			Only \'cartesian\' and \'radial\' implemented')
 
 def introduce_gibbs_artifact(img, percent):
 	################ NEED TO CLEAN THIS FUNCTION #############################
@@ -115,6 +141,18 @@ def introduce_gibbs_artifact(img, percent):
 	return np.abs(img)
 
 def add_tumor(img):
+	""" Add a tumor to a 2D image
+
+	A tumor is added at a random location, with a random size, and a 
+	random intensity, and Gaussian smoothed.
+
+	Args:
+		img (2d numpy array): The image
+
+	Returns:
+		img (2d numpy array): The image with the tumor
+	"""
+	
 	shape = img.shape
 
 	# Random range for the tumor position

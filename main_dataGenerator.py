@@ -25,11 +25,11 @@ dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/d
 
 
 
-dataManager.compileDataset('data_tumor', 'ADNI', option = 'add_tumor', slice_ix = 0.52, img_shape = 128)
+#dataManager.compileDataset('data_tumor_0_5_undersampling', 'ADNI', option = 'add_tumor', slice_ix = 0.52, img_shape = 128)
 
 
 data = {}
-hf = h5py.File('experiments/data_tumor.h5', 'r')
+hf = h5py.File('experiments/data_tumor_0_5_undersampling.h5', 'r')
 print([key for key in hf.keys()])
 for key in hf.keys():
 	print(key)
@@ -39,10 +39,42 @@ hf.close()
 
 print(list(data.keys()))
 
-print(data['X_validation'].shape)
-print(data['Y_validation'][0])
-plt.imshow(np.abs(data['X_validation'][0]).T, cmap = 'gray')
+for d in list(data.keys()):
+	print(d, data[d].shape)
+
+
+ix = 32
+print('Label = ', data['train_label'][ix])
+plt.subplot(1,2,1)
+plt.imshow(np.abs(data['train_image'][ix]).T, cmap = 'gray')
+plt.subplot(1,2,2)
+plt.imshow(np.log(np.abs(data['train_tumor'][ix])).T, cmap = 'gray')
 plt.show()
+
+'''
+
+print(data['X_train'].shape)
+print(data['X_validation'].shape)
+print(type(data['X_validation'][0][0,0]))
+
+print('-----------------------------------------------')
+
+print(type(np.abs(data['X_validation'][0])))
+print(np.abs(data['X_validation'][0]).shape)
+
+print(data['Y_validation'][0])
+
+plt.subplot(2,2,1)
+plt.imshow(np.abs(data['X_validation'][0]).T, cmap = 'gray')
+plt.subplot(2,2,2)
+plt.imshow(np.angle(data['X_validation'][0]).T, cmap = 'gray')
+plt.subplot(2,2,3)
+plt.imshow(np.real(data['X_validation'][0]).T, cmap = 'gray')
+plt.subplot(2,2,4)
+plt.imshow(np.imag(data['X_validation'][0]).T, cmap = 'gray')
+plt.show()
+'''
+
 
 
 '''
