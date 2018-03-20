@@ -84,40 +84,32 @@ class DataManager(object):
 
 		self.data_splits.update({str(dataset): [train, valid, test]})
 
-
-	def compileDataset(self, database_name, dataset, option = 'image_and_k_space', slice_ix = 0.52, img_shape = 128):
+	def compileDataset(self, params):
 		""" Extracts the features for the datasets and compiles them into a database
 
 		Args:
 			dataset (string): the dataset from which to extract features. 
-			option (string): Option for determining what features to extract
-							 - 'image_and_k_space': generate a database with image space and k-space
+			params (dictionary): contains all the options the user wants for
+								 extracting the desired features.
 
 		"""
 		# Extract features 
-		featureExtractor = FeatureExtractor(option, 
-											slice_ix = slice_ix, 
-											img_shape = img_shape, 
-											sequence = 30)
+		featureExtractor = FeatureExtractor(params)
 
+		# Get the filepath to the data
+		dataset = params['dataset']
 		filepath = self.information[dataset][1]
-
-		# Description of the dataset that is being generated
-		attributes = {'option': option, 
-					  'dataset': dataset, 
-					  'slice_ix': slice_ix, 
-					  'img_size': img_shape}
 
 		# Generate the databases
 		databases = {}
 		for ix, i in enumerate(['train', 'validation', 'test']):
 			subjects = self.data_splits[dataset][ix]
-			data = featureExtractor.extractFeatureSet(subjects, dataset, filepath)
+			data = featureExtractor.extract_features(subjects[0:2], dataset, filepath)
 			# Give a name to each of the data entries
 			for d in data: databases.update({i + '_' + d: data[d]})
 
 		# Write the datasets to the .h5 database file
-		write_data(databases, attributes, database_name)
+		write_data(databases, params, params['database_name'])
 
 	def getDataCollection(self):
 		return self.dataCollection

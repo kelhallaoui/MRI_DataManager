@@ -152,7 +152,7 @@ def add_tumor(img):
 	Returns:
 		img (2d numpy array): The image with the tumor
 	"""
-	
+
 	shape = img.shape
 
 	# Random range for the tumor position
@@ -187,6 +187,14 @@ def add_tumor(img):
 	img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
 															 2, mode='constant')
 	return img
+
+def add_gaussian_noise(img, percent):
+	################ NEED TO CLEAN THIS FUNCTION #############################
+	img_size = img.shape[0]
+
+	r = np.real(img) + percent*np.random.normal(0,1,img_size**2).reshape((img_size,img_size))
+	i = np.imag(img) + percent*np.random.normal(0,1,img_size**2).reshape((img_size,img_size))
+	return (r + i*1j)
 
 def plot_complex_image(img, mode = 'polar', setting = None):
 	""" Plots the real and imaginary part of an image side by side

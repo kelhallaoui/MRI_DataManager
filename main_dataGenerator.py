@@ -23,13 +23,26 @@ dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/d
 
 #dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
 
+params = {'database_name': 		'data_tumor_TEST',
+		  'dataset': 			'ADNI',
+		  'feature_option':		'add_tumor',
+		  'slice_ix': 			0.52,
+		  'img_shape': 			128,
+		  'consec_slices':		30,
+		  'num_subjects': 		'all',
+		  'scan_type': 			'T2',
+		  'acquisition_option':	'radial',
+		  'sampling_percent': 	0.5}
 
+dataManager.compileDataset(params)
 
-#dataManager.compileDataset('data_tumor_0_5_undersampling', 'ADNI', option = 'add_tumor', slice_ix = 0.52, img_shape = 128)
+#dataManager.compileDataset('data_tumor_0_99_undersampling', 'ADNI', option = 'add_tumor', slice_ix = 0.52, img_shape = 128)
+
+#dataManager.compileDataset('data_denoising', 'ADNI', option = 'denoising', slice_ix = 0.52, img_shape = 128)
 
 
 data = {}
-hf = h5py.File('experiments/data_tumor_0_5_undersampling.h5', 'r')
+hf = h5py.File('experiments/data_tumor_TEST.h5', 'r')
 print([key for key in hf.keys()])
 for key in hf.keys():
 	print(key)
@@ -43,13 +56,14 @@ for d in list(data.keys()):
 	print(d, data[d].shape)
 
 
-ix = 32
+ix = 2
 print('Label = ', data['train_label'][ix])
 plt.subplot(1,2,1)
 plt.imshow(np.abs(data['train_image'][ix]).T, cmap = 'gray')
 plt.subplot(1,2,2)
-plt.imshow(np.log(np.abs(data['train_tumor'][ix])).T, cmap = 'gray')
+plt.imshow(np.log(np.abs(data['train_k_space'][ix])).T, cmap = 'gray')
 plt.show()
+
 
 '''
 
