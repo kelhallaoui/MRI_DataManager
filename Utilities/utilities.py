@@ -53,8 +53,6 @@ def extract_NIFTI(filepath, subject_id, scan_type = 'T1'):
 		              str(subject_id) + '_3T_BIAS_BC.nii.gz'
 		filename_ch = str(subject_id) + '/unprocessed/3T/T2w_SPC1/' + \
 		              str(subject_id) + '_3T_BIAS_32CH.nii.gz'
-
-
 	else: raise NameError('Invalid acquisition. Either \'T1\' or \'T2\'')
 		       
 	print('Filename: ', filename_t2)
@@ -107,7 +105,6 @@ def extractFigShare(directory, subject_id, subject_id_files_map=None):
 		directory (string): path to the directory of FigShare data
 		subject_id (string)
 	"""
-
 	# print('subject_id_files_map', subject_id_files_map)
 
 	if not subject_id_files_map:
@@ -160,7 +157,7 @@ def extractFigShare(directory, subject_id, subject_id_files_map=None):
 	return np.array(slices)
 
 
-def openNIFTI(filename):
+def open_NIFTI(filename):
 	"""Imports data from the NIFTI files
 
 	Args:

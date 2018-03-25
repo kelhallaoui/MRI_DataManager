@@ -2,8 +2,7 @@ import os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from Utilities.utilities import extractNIFTI, readCSV, write_data, get_FigShare_patient_slice_files_map
-from Utilities.utilities import extract_NIFTI, read_CSV, write_data
+from Utilities.utilities import extract_NIFTI, read_CSV, write_data, get_FigShare_patient_slice_files_map
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
@@ -57,8 +56,7 @@ class DataManager(object):
 				filepath + 'ADNI/dataset_metadata.csv', 
 				filepath + r'ADNI/MRI data/', 
 				[0, 3, 4, 6],
-				'Subject'
-			],
+				'Subject'],
 			FIG_SHARE: {
 				'directory': os.path.join(filepath, '1512427'),
 			}
@@ -80,7 +78,7 @@ class DataManager(object):
 				indices = self.information[dataset][2]
 				key = self.information[dataset][3]
 				# Add dataset to the collection
-				self.dataCollection.update({str(dataset): readCSV(filepath, indices)})
+				self.dataCollection.update({str(dataset): read_CSV(filepath, indices)})
 				self.train_validate_test_split(dataset, column_header=key)
 			elif dataset == FIG_SHARE:
 				pid_slice_files_map = get_FigShare_patient_slice_files_map(self.information[dataset]['directory'])
@@ -89,8 +87,6 @@ class DataManager(object):
 					total_slices += len(slice_files)
 				self.dataCollection.update({str(dataset): {'pid_slice_files_map': pid_slice_files_map, 'total_slices': total_slices}})
 				self.train_validate_test_split(dataset)
-
-
 
 	def train_validate_test_split(self, dataset, column_header=None, train_percent=.6, valid_percent=.2, seed=None):
 			filepath = self.information[dataset][0]
@@ -169,9 +165,9 @@ class DataManager(object):
 			feature_name: image, k_space, label (optional)
 
 		"""
-		# Extract features 
-		featureExtractor = FeatureExtractor(params)
 		dataset = params['dataset']
+		print(dataset)
+
 
 		options = {}
 		if dataset == ADNI:
@@ -188,14 +184,9 @@ class DataManager(object):
 			for ix, i in enumerate(['train', 'validation', 'test']):
 				print('extracting {}  data from {} ...'.format(i, dataset))
 				subjects = self.data_splits[dataset][ix]
-				data = featureExtractor.extract_features(subjects, dataset, filepath, options=options)
+				data = featureExtractor.extract_features(subjects[0:2], dataset, filepath, options=options)
 				# Give a name to each of the data entries
 				for d in data: databases.update({i + '_' + d: data[d]})
-		for ix, i in enumerate(['train', 'validation', 'test']):
-			subjects = self.data_splits[dataset][ix]
-			data = featureExtractor.extract_features(subjects, dataset, filepath)
-			# Give a name to each of the data entries
-			for d in data: databases.update({i + '_' + d: data[d]})
 
 		# Write the datasets to the .h5 database file
 		write_data(databases, params, params['database_name'])

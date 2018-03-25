@@ -32,7 +32,7 @@ params = {'database_name': 		'fig_share_data',
 
 #dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
 
-params = {'database_name': 		'data_tumor_8_cartesian_lines',
+params = {'database_name': 		'data_tumor_TEST',
 		  'dataset': 			'ADNI',
 		  'feature_option':		'add_tumor',
 		  'slice_ix': 			0.52,
@@ -47,7 +47,7 @@ params = {'database_name': 		'data_tumor_8_cartesian_lines',
 		  'tumor_radius_range': [0.8,2.2],
 		  'distort_mult_range': [0.5,1.5]}
 
-#dataManager.compile_dataset(params)
+dataManager.compile_dataset(params)
 
 #dataManager.compileDataset('data_tumor_0_99_undersampling', 'ADNI', option = 'add_tumor', slice_ix = 0.52, img_shape = 128)
 
@@ -55,7 +55,7 @@ params = {'database_name': 		'data_tumor_8_cartesian_lines',
 
 
 data = {}
-hf = h5py.File('experiments/data_tumor_8_cartesian_lines.h5', 'r')
+hf = h5py.File('experiments/data_tumor_TEST.h5', 'r')
 print([key for key in hf.keys()])
 for key in hf.keys():
 	print(key)
@@ -69,7 +69,7 @@ for d in list(data.keys()):
 	print(d, data[d].shape)
 
 
-ix = 10
+ix = 0
 print('Label = ', data['train_label'][ix])
 plt.subplot(2,1,1)
 plt.imshow(np.abs(data['train_image'][ix]).T, cmap = 'gray')

@@ -1,7 +1,6 @@
 import numpy as np
 import zipfile
-from Utilities.utilities import extractNIFTI, extractFigShare
-from Utilities.utilities import extract_NIFTI
+from Utilities.utilities import extract_NIFTI, extractFigShare
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
@@ -69,7 +68,7 @@ class FeatureExtractor(object):
 		if dataset == 'ADNI':
       
 			# Count the number of valid brains in the dataset
-		  batch_size = self.get_batch_size(subjects, filepath)
+			batch_size = self.get_batch_size(subjects, filepath)
 
 			# Set containers in which to store the data
 			data_k_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
