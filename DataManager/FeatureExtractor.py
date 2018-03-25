@@ -1,5 +1,6 @@
 import numpy as np
 import zipfile
+from Utilities.utilities import extractNIFTI, extractFigShare
 from Utilities.utilities import extract_NIFTI
 from DataManager.PreProcessData import *
 
@@ -14,7 +15,7 @@ class FeatureExtractor(object):
 	def __init__(self, params):
 		self.params = params
 
-	def extract_features(self, subjects, dataset, filepath):
+	def extract_features(self, subjects, dataset, filepath, options=None):
 		""" Extracts the desired features for a list of subjects from a dataset
 
 		Args:
@@ -26,19 +27,19 @@ class FeatureExtractor(object):
 			A dictionary with all the data matrices
 		"""
 		if self.params['feature_option'] is 'image_and_k_space':
-			data_img_space, data_k_space = self.extract_feature_image_and_k_space(subjects, dataset, filepath)
+			data_img_space, data_k_space = self.extract_feature_image_and_k_space(subjects, dataset, filepath, options=options)
 			return {'image': data_img_space, 'k_space': data_k_space}
 
 		elif self.params['feature_option'] is 'image_and_gibbs':
-			data_img_gibbs, data_gibbs = self.extract_feature_image_and_gibbs(subjects, dataset, filepath)
+			data_img_gibbs, data_gibbs = self.extract_feature_image_and_gibbs(subjects, dataset, filepath, options=options)
 			return {'img_with_gibbs': data_img_gibbs, 'gibbs': data_gibbs}
 
 		elif self.params['feature_option'] is 'add_tumor':
-			data_img, data_k_space, data_label = self.extract_feature_add_tumor(subjects, dataset, filepath)
+			data_img, data_k_space, data_label = self.extract_feature_add_tumor(subjects, dataset, filepath, options=options)
 			return {'image': data_img, 'k_space': data_k_space, 'label': data_label}
 
 		elif self.params['feature_option'] is 'denoising':
-			data_img, data_img_noisy = self.extract_feature_denoising(subjects, dataset, filepath)
+			data_img, data_img_noisy = self.extract_feature_denoising(subjects, dataset, filepath, options=options)
 			return {'image': data_img, 'image_noisy': data_img_noisy}
 
 	
@@ -64,30 +65,42 @@ class FeatureExtractor(object):
 	# Image and k-space
 	#
 	##########################################################################################
-	def extract_feature_image_and_k_space(self, subjects, dataset, filepath, scan_type = 'T1'):
-		# Count the number of valid brains in the dataset
-		batch_size = self.get_batch_size(subjects, filepath)
+	def extract_feature_image_and_k_space(self, subjects, dataset, filepath, scan_type = 'T1', options=None):
+		if dataset == 'ADNI':
+      
+			# Count the number of valid brains in the dataset
+		  batch_size = self.get_batch_size(subjects, filepath)
 
-		# Set containers in which to store the data
-		data_k_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
-		data_img_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+			# Set containers in which to store the data
+			data_k_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+			data_img_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
 
-		# Extract the data
-		batch_ix = 0
-		for subject_id in subjects:
-			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-			if zipfile.is_zipfile(zip_filename):
-				# Get the T1-weighted MRI image from the datasource and the current subject_id
-				data, aff, hdr = extract_NIFTI(filepath, subject_id, scan_type)
-				for i in range(self.sequence):
-					img, k_space_img = self.extract_image_and_k_space(data, self.slice_ix + i*0.003125)
-					data_k_space[batch_ix] = k_space_img
-					data_img_space[batch_ix] = img
-					batch_ix += 1
+			# Extract the data
+			batch_ix = 0
+			for subject_id in subjects:
+				zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
+				if zipfile.is_zipfile(zip_filename):
+					# Get the T1-weighted MRI image from the datasource and the current subject_id
+					data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
+					for i in range(self.sequence):
+						img, k_space_img = self.extract_image_and_k_space(data, slice_ix=self.slice_ix + i*0.003125)
+						data_k_space[batch_ix] = k_space_img
+						data_img_space[batch_ix] = img
+						batch_ix += 1
 
-					print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
-
-		return data_img_space, data_k_space
+						print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
+			return data_img_space, data_k_space
+    
+		elif dataset == 'FigShare':
+			for subject_id in subjects:
+				data_img_space = []
+				data_k_space = []
+				images = extractFigShare(filepath, subject_id, subject_id_files_map=options['subject_id_files_map'])
+				for image in images:
+					img_space, k_space = self.extract_image_and_k_space(image)
+					data_img_space.append(img_space)
+					data_k_space.append(k_space)
+			return np.array(data_img_space), np.array(data_k_space, dtype=complex)
 
 	def extract_image_and_k_space(self, data, slice_ix):
 		""" Extracts the image space and k-space data
@@ -100,21 +113,24 @@ class FeatureExtractor(object):
 			img: The complex image space
 			k_space_img: The complex k-space
 		"""
-		# Extract the slice
-		img = extract_slice(data, slice_ix)
-		img = resize_image(img, self.img_shape)
-		phase_map = generate_synthetic_phase_map(self.img_shape)
+		# Extract the slice if there is slice_ix
+		if slice_ix:
+			img = extractSlice(data, slice_ix)
+		# If not assume the whole data is a slice
+		else:
+			img = data
+		img = resizeImage(img, self.params['img_shape'])
+		phase_map = generate_synthetic_phase_map(self.params['img_shape'])
 		img = inject_phase_map(img, phase_map)
 		k_space_img = transform_to_k_space(img)
 		return img, k_space_img
-
 
 	##########################################################################################
 	# 
 	# Image with Gibbs and the Gibbs artifact
 	#
 	##########################################################################################
-	def extract_feature_image_and_gibbs(self, subjects, dataset, filepath, scan_type = 'T1'):
+	def extract_feature_image_and_gibbs(self, subjects, dataset, filepath, scan_type = 'T1', options=None):
 		# Count the number of valid brains in the dataset
 		batch_size = self.get_batch_size(subjects, filepath)
 
@@ -164,7 +180,7 @@ class FeatureExtractor(object):
 	# Image with or without tumor, associated k_space and labels
 	#
 	##########################################################################################
-	def extract_feature_add_tumor(self, subjects, dataset, filepath):
+	def extract_feature_add_tumor(self, subjects, dataset, filepath, options=None):
 		# Count the number of valid brains in the dataset
 		batch_size = self.get_batch_size(subjects, filepath)
 
@@ -222,7 +238,7 @@ class FeatureExtractor(object):
 	# Image with and without added noise
 	#
 	##########################################################################################
-	def extract_feature_denoising(self, subjects, dataset, filepath, scan_type = 'T2'):
+	def extract_feature_denoising(self, subjects, dataset, filepath, scan_type = 'T2', options=None):
 		# Count the number of valid brains in the dataset
 		batch_size = self.get_batch_size(subjects, filepath)
 

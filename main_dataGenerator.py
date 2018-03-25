@@ -8,6 +8,15 @@ from matplotlib import pyplot as plt
 from DataManager.FeatureExtractor import *
 
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
+'''
+Example to extract FigShare Dataset
+dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['FigShare'])
+params = {'database_name': 		'fig_share_data',
+		  'dataset': 			'FigShare',
+		  'feature_option':		'image_and_k_space',
+		  'img_shape': 			128,
+		  'num_subjects': 		'all'}
+'''
 
 #print(dataManager.getData('ADNI', 'Subject'))
 #print(dataManager.getKeys('ADNI'))
