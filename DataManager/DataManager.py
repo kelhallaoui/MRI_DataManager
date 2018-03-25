@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from Utilities.utilities import extractNIFTI, readCSV, write_data
+from Utilities.utilities import extract_NIFTI, read_CSV, write_data
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
@@ -42,9 +42,9 @@ class DataManager(object):
 									 [0, 3, 4, 6],
 									 'Subject']}
 		# Add the datasets that are listed to the data collection
-		self.addDatasets(datasets)
+		self.add_datasets(datasets)
 
-	def addDatasets(self, datasets):
+	def add_datasets(self, datasets):
 		""" Add new datasets to the dataCollection dictionary
 
 		Args:
@@ -56,7 +56,7 @@ class DataManager(object):
 			indices = self.information[dataset][2]
 			key = self.information[dataset][3]
 			# Add dataset to the collection
-			self.dataCollection.update({str(dataset): readCSV(filepath, indices)})
+			self.dataCollection.update({str(dataset): read_CSV(filepath, indices)})
 			self.train_validate_test_split(dataset, key)
 
 	def train_validate_test_split(self, dataset, column_header, train_percent=.6, valid_percent=.2, seed=None):
@@ -84,7 +84,7 @@ class DataManager(object):
 
 		self.data_splits.update({str(dataset): [train, valid, test]})
 
-	def compileDataset(self, params):
+	def compile_dataset(self, params):
 		""" Extracts the features for the datasets and compiles them into a database
 
 		Args:
@@ -104,31 +104,31 @@ class DataManager(object):
 		databases = {}
 		for ix, i in enumerate(['train', 'validation', 'test']):
 			subjects = self.data_splits[dataset][ix]
-			data = featureExtractor.extract_features(subjects[0:2], dataset, filepath)
+			data = featureExtractor.extract_features(subjects, dataset, filepath)
 			# Give a name to each of the data entries
 			for d in data: databases.update({i + '_' + d: data[d]})
 
 		# Write the datasets to the .h5 database file
 		write_data(databases, params, params['database_name'])
 
-	def getDataCollection(self):
+	def get_data_collection(self):
 		return self.dataCollection
 
-	def getData(self, dataset, key):
+	def get_data(self, dataset, key):
 		if dataset in self.dataCollection:
 			if key in self.dataCollection[dataset].columns:
 				return self.dataCollection[dataset][key]
 
-	def getKeys(self, dataset):
+	def get_keys(self, dataset):
 		if dataset in self.dataCollection:
 			return self.dataCollection[dataset].keys()
 
-	def viewSubject(self, dataset, subject_id, slice_ix = 0.5, scan_type = 'T1'):
+	def view_subject(self, dataset, subject_id, slice_ix = 0.5, scan_type = 'T1'):
 		filepath = self.information[dataset][1]
 
 		# Get the T1-weighted MRI image from the datasource and the current subject_id
-		data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
-		img = extractSlice(data, slice_ix)
+		data, aff, hdr = extract_NIFTI(filepath, subject_id, scan_type)
+		img = extract_slice(data, slice_ix)
 		plt.imshow(img.T, cmap = 'gray')
 		plt.colorbar()
 		plt.show()

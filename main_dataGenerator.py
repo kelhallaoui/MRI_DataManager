@@ -1,7 +1,7 @@
 import numpy as np 
 import h5py
 from DataManager.DataManager import DataManager
-from Utilities.utilities import extractNIFTI
+from Utilities.utilities import extract_NIFTI
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
@@ -23,7 +23,7 @@ dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/d
 
 #dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
 
-params = {'database_name': 		'data_tumor_TEST',
+params = {'database_name': 		'data_tumor_8_cartesian_lines',
 		  'dataset': 			'ADNI',
 		  'feature_option':		'add_tumor',
 		  'slice_ix': 			0.52,
@@ -31,10 +31,14 @@ params = {'database_name': 		'data_tumor_TEST',
 		  'consec_slices':		30,
 		  'num_subjects': 		'all',
 		  'scan_type': 			'T2',
-		  'acquisition_option':	'radial',
-		  'sampling_percent': 	0.5}
+		  'acquisition_option':	'cartesian',
+		  'sampling_percent': 	0.0625,
+		  'tumor_option':		'circle',
+		  'tumor_radius':       0.05,
+		  'tumor_radius_range': [0.8,2.2],
+		  'distort_mult_range': [0.5,1.5]}
 
-dataManager.compileDataset(params)
+#dataManager.compile_dataset(params)
 
 #dataManager.compileDataset('data_tumor_0_99_undersampling', 'ADNI', option = 'add_tumor', slice_ix = 0.52, img_shape = 128)
 
@@ -42,7 +46,7 @@ dataManager.compileDataset(params)
 
 
 data = {}
-hf = h5py.File('experiments/data_tumor_TEST.h5', 'r')
+hf = h5py.File('experiments/data_tumor_8_cartesian_lines.h5', 'r')
 print([key for key in hf.keys()])
 for key in hf.keys():
 	print(key)
@@ -56,51 +60,38 @@ for d in list(data.keys()):
 	print(d, data[d].shape)
 
 
-ix = 2
+ix = 10
 print('Label = ', data['train_label'][ix])
-plt.subplot(1,2,1)
+plt.subplot(2,1,1)
 plt.imshow(np.abs(data['train_image'][ix]).T, cmap = 'gray')
-plt.subplot(1,2,2)
+plt.subplot(2,1,2)
 plt.imshow(np.log(np.abs(data['train_k_space'][ix])).T, cmap = 'gray')
 plt.show()
 
 
-'''
-
-print(data['X_train'].shape)
-print(data['X_validation'].shape)
-print(type(data['X_validation'][0][0,0]))
-
-print('-----------------------------------------------')
-
-print(type(np.abs(data['X_validation'][0])))
-print(np.abs(data['X_validation'][0]).shape)
-
-print(data['Y_validation'][0])
-
 plt.subplot(2,2,1)
-plt.imshow(np.abs(data['X_validation'][0]).T, cmap = 'gray')
+plt.imshow(np.abs(data['train_image'][ix]).T, cmap = 'gray')
 plt.subplot(2,2,2)
-plt.imshow(np.angle(data['X_validation'][0]).T, cmap = 'gray')
+plt.imshow(np.abs(data['train_image'][ix+1]).T, cmap = 'gray')
 plt.subplot(2,2,3)
-plt.imshow(np.real(data['X_validation'][0]).T, cmap = 'gray')
+plt.imshow(np.abs(data['train_image'][ix+2]).T, cmap = 'gray')
 plt.subplot(2,2,4)
-plt.imshow(np.imag(data['X_validation'][0]).T, cmap = 'gray')
+plt.imshow(np.abs(data['train_image'][ix+3]).T, cmap = 'gray')
 plt.show()
-'''
 
 
 
 '''
+
 from copy import deepcopy
 
 filepath = r'C:/Users/eee/workspace_python/Image Reconstruction/data/ADNI/MRI data/'
-data, aff, hdr = extractNIFTI(filepath, 100206, 'T2')
+data, aff, hdr = extract_NIFTI(filepath, 100206, 'T2')
 #data = data[:,:,180]
 
 slice_ix = 180*0.003125
-img = extractSlice(data, slice_ix)
-img = resizeImage(img, img.shape[0])
+img = extract_slice(data, slice_ix)
+img = resize_image(img, img.shape[0])
 
 img_tumor = add_tumor(deepcopy(img))
 
@@ -111,9 +102,11 @@ k_space_img = transform_to_k_space(img)
 plt.figure()
 plt.subplot(2,2,1)
 plt.imshow(np.abs(img/np.max(img)).T, cmap = 'gray')
+plt.axis('off')
 plt.colorbar()
 plt.subplot(2,2,2)
 plt.imshow(np.abs(k_space_img/np.max(k_space_img)).T, cmap = 'gray')
+plt.axis('off')
 plt.colorbar()
 
 phase_map = generate_synthetic_phase_map(img_tumor.shape[0])
@@ -122,9 +115,11 @@ k_space_img = transform_to_k_space(img_tumor)
 
 plt.subplot(2,2,3)
 plt.imshow(np.abs(img_tumor/np.max(img_tumor)).T, cmap = 'gray')
+plt.axis('off')
 plt.colorbar()
 plt.subplot(2,2,4)
 plt.imshow(np.abs(k_space_img/np.max(k_space_img)).T, cmap = 'gray')
+plt.axis('off')
 plt.colorbar()
 plt.show()
 '''
