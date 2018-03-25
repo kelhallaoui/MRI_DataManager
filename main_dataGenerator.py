@@ -9,7 +9,7 @@ from DataManager.FeatureExtractor import *
 
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-
+'''
 #Example to extract FigShare Dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['FigShare'])
 params = {'database_name': 		'fig_share_data',
@@ -24,7 +24,7 @@ print(len(dataManager.data_splits['FigShare'][1]))
 print(len(dataManager.data_splits['FigShare'][2]))
 
 dataManager.compile_dataset(params)
-
+'''
 
 
 
@@ -46,7 +46,7 @@ dataManager.compile_dataset(params)
 
 #dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
 
-'''
+
 params = {'database_name': 		'data_tumor_TEST',
 		  'dataset': 			'ADNI',
 		  'feature_option':		'add_tumor',
@@ -54,7 +54,7 @@ params = {'database_name': 		'data_tumor_TEST',
 		  'img_shape': 			128,
 		  'consec_slices':		30,
 		  'num_subjects': 		'all',
-		  'scan_type': 			'T2',
+		  'scan_type': 			'T1',
 		  'acquisition_option':	'cartesian',
 		  'sampling_percent': 	0.0625,
 		  'tumor_option':		'circle',
@@ -102,7 +102,7 @@ plt.imshow(np.abs(data['train_image'][ix+2]).T, cmap = 'gray')
 plt.subplot(2,2,4)
 plt.imshow(np.abs(data['train_image'][ix+3]).T, cmap = 'gray')
 plt.show()
-'''
+
 
 
 '''
