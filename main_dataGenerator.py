@@ -1,22 +1,36 @@
 import numpy as np 
 import h5py
 from DataManager.DataManager import DataManager
-from Utilities.utilities import extract_NIFTI
+from Utilities.utilities import extract_NIFTI, extract_FigShare
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from DataManager.FeatureExtractor import *
 
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
-'''
-Example to extract FigShare Dataset
+
+
+#Example to extract FigShare Dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['FigShare'])
 params = {'database_name': 		'fig_share_data',
 		  'dataset': 			'FigShare',
 		  'feature_option':		'image_and_k_space',
 		  'img_shape': 			128,
 		  'num_subjects': 		'all'}
-'''
+
+print(len(dataManager.dataCollection['FigShare']))
+print(len(dataManager.data_splits['FigShare'][0]))
+print(len(dataManager.data_splits['FigShare'][1]))
+print(len(dataManager.data_splits['FigShare'][2]))
+
+dataManager.compile_dataset(params)
+
+
+
+
+
+
+
 
 #print(dataManager.getData('ADNI', 'Subject'))
 #print(dataManager.getKeys('ADNI'))
@@ -32,6 +46,7 @@ params = {'database_name': 		'fig_share_data',
 
 #dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
 
+'''
 params = {'database_name': 		'data_tumor_TEST',
 		  'dataset': 			'ADNI',
 		  'feature_option':		'add_tumor',
@@ -87,7 +102,7 @@ plt.imshow(np.abs(data['train_image'][ix+2]).T, cmap = 'gray')
 plt.subplot(2,2,4)
 plt.imshow(np.abs(data['train_image'][ix+3]).T, cmap = 'gray')
 plt.show()
-
+'''
 
 
 '''

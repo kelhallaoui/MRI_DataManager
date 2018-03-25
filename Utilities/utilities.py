@@ -98,64 +98,22 @@ def extract_NIFTI(filepath, subject_id, scan_type = 'T1'):
 		shutil.rmtree(str(subject_id) + '/', ignore_errors=True) # Delete the file in the root
 		return t2, aff, hdr
 
-def extractFigShare(directory, subject_id, subject_id_files_map=None):
-	""" Extract all mat files within the sub directory under one root_directory
-	
-	Args:
-		directory (string): path to the directory of FigShare data
-		subject_id (string)
-	"""
-	# print('subject_id_files_map', subject_id_files_map)
-
-	if not subject_id_files_map:
-		print('WARNING: subject_id_files_map is not found, this will significantly slow down the extraction')
-
-	zip_files = [
-		'brainTumorDataPublic_1-766.zip',
-		'brainTumorDataPublic_767-1532.zip',
-		'brainTumorDataPublic_1533-2298.zip',
-		'brainTumorDataPublic_2299-3064.zip'
-	]
+def extract_FigShare(filepath, filenames):
+	zip_files = [r'brainTumorDataPublic_1-766.zip',
+				 r'brainTumorDataPublic_767-1532.zip',
+				 r'brainTumorDataPublic_1533-2298.zip',
+				 r'brainTumorDataPublic_2299-3064.zip']
 
 	slices = []
-
-	print('extracting FIGSHARE subject {} ...'.format(subject_id))
-
-	if subject_id_files_map:
-		files = subject_id_files_map[subject_id]
-		for filename in files:
-			file_num = int(filename.split('.')[0])
-			zip_num = math.ceil(file_num / 766) - 1
-			zip_file = zip_files[zip_num]
-			sub_dir_path = os.path.join(directory, zip_file.split('.')[0])
-			if os.path.isdir(sub_dir_path):
-				slices.append(openFigShare(os.path.join(sub_dir_path, filename)))
-			else:
-				slices.append(openFigShareInZip(os.path.join(directory, zip_file), filename))
-		return np.array(slices)
-
-
-	for zip_file in zip_files:
-		sub_dir_path = os.path.join(directory, zip_file.split('.')[0])
-		if os.path.isdir(sub_dir_path):
-			for filename in sorted(os.listdir(sub_dir_path), key=lambda name: int(name.split('.')[0])):
-				with h5py.File(os.path.join(sub_dir_path, filename), 'r') as f:
-					cjdata = f['cjdata']
-					pid = cjdata['PID']
-					pid = u''.join(chr(c) for c in pid)
-					if pid == subject_id:
-						slices.append(np.array(cjdata['image']))
-		else:
-			with zipfile.ZipFile(os.path.join(directory, zip_file), 'r') as zf:
-				with filename in sorted(zf.namelist(), key=lambda name: int(name.split('.')[0])):
-					with open_h5_in_memory(zf.read(filename)) as f:
-						cjdata = f['cjdata']
-						pid = cjdata['PID']
-						pid = u''.join(chr(c) for c in pid)
-						if pid == subject_id:
-							slices.append(np.array(cjdata['image']))
-	return np.array(slices)
-
+	for filename in filenames:
+		if int(filename[:filename.index('.')]) <= 766: file_ix = 0
+		elif int(filename[:filename.index('.')]) <= 1532: file_ix = 1
+		elif int(filename[:filename.index('.')]) <= 2298: file_ix = 2
+		elif int(filename[:filename.index('.')]) <= 3064: file_ix = 3
+		di = filepath + zip_files[file_ix] 
+		image = openFigShareInZip(di, filename)
+		slices.append(image)
+	return slices
 
 def open_NIFTI(filename):
 	"""Imports data from the NIFTI files
@@ -243,7 +201,11 @@ def get_FigShare_patient_slice_files_map(directory):
 							slices[pid].append(filename)
 						else:
 							slices[pid] = [filename]
-	return slices
+	
+	d = {'Patient ID': [i for i in slices], 'File Map': [slices[i] for i in slices]}
+	df = pd.DataFrame(d)
+	df = df[['Patient ID', 'File Map']]						
+	return df
 
 def write_data(databases, attributes, filename):
 	print('writinng data to experiments/{}.h5 ...'.format(filename))

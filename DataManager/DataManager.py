@@ -19,7 +19,8 @@ class DataManager(object):
 
 	Attrs:
 		dataCollection (dictionary): Contains the metadata for all the datasets stored indexed by 
-		                             the name of the dataset.
+		                             the name of the dataset. The metadata should be organized as
+		                             a pandas dataframe.
 		data_splits (dictionary): Contains the train/validation/test indices for each of the 
 		                          datasets in dataCollection.
 		information (dictionary): Contains information about the dataset 
@@ -52,15 +53,16 @@ class DataManager(object):
 
 		# Information about the datasets as a dictionary
 		self.information = {
-			ADNI: [
-				filepath + 'ADNI/dataset_metadata.csv', 
-				filepath + r'ADNI/MRI data/', 
-				[0, 3, 4, 6],
-				'Subject'],
+			ADNI: {
+				'metadata_filepath': filepath + 'ADNI/dataset_metadata.csv', 
+				'data_filepath':     filepath + r'ADNI/MRI data/', 
+				'cols':              [0, 3, 4, 6],
+				'key':               'Subject'},
 			FIG_SHARE: {
-				'directory': os.path.join(filepath, '1512427'),
+				'data_filepath': filepath + r'/1512427/',
+				'key': 'Patient ID'
+				}
 			}
-		}
 
 		# Add the datasets that are listed to the data collection
 		self.add_datasets(datasets)
@@ -74,27 +76,18 @@ class DataManager(object):
 		"""
 		for dataset in datasets:
 			if dataset == ADNI:
-				filepath = self.information[dataset][0]
-				indices = self.information[dataset][2]
-				key = self.information[dataset][3]
+				filepath = self.information[dataset]['metadata_filepath']
+				indices = self.information[dataset]['cols']
 				# Add dataset to the collection
 				self.dataCollection.update({str(dataset): read_CSV(filepath, indices)})
-				self.train_validate_test_split(dataset, column_header=key)
+			
 			elif dataset == FIG_SHARE:
-				pid_slice_files_map = get_FigShare_patient_slice_files_map(self.information[dataset]['directory'])
-				total_slices = 0
-				for pid, slice_files in pid_slice_files_map.items():
-					total_slices += len(slice_files)
-				self.dataCollection.update({str(dataset): {'pid_slice_files_map': pid_slice_files_map, 'total_slices': total_slices}})
-				self.train_validate_test_split(dataset)
+				pid_slice_files_map = get_FigShare_patient_slice_files_map(
+										self.information[dataset]['data_filepath'])
+				self.dataCollection.update({str(dataset): pid_slice_files_map})
 
-	def train_validate_test_split(self, dataset, column_header=None, train_percent=.6, valid_percent=.2, seed=None):
-			filepath = self.information[dataset][0]
-			indices = self.information[dataset][2]
-			key = self.information[dataset][3]
-			# Add dataset to the collection
-			self.dataCollection.update({str(dataset): read_CSV(filepath, indices)})
-			self.train_validate_test_split(dataset, key)
+			key = self.information[dataset]['key']
+			self.train_validate_test_split(dataset, column_header=key)
 
 	def train_validate_test_split(self, dataset, column_header, train_percent=.6, valid_percent=.2, seed=None):
 		"""Splits up the index associated with the dataset into a train/validation/test set
@@ -110,47 +103,16 @@ class DataManager(object):
 		"""
 		if not seed is None: np.random.seed(seed)
 		
-		if dataset == ADNI:
-			data = self.dataCollection[dataset][column_header]
-			perm = np.random.permutation(data)
-			m = len(data)
+		data = self.dataCollection[dataset][column_header]
+		perm = np.random.permutation(data)
+		m = len(data)
 
-			# Get the split indices
-			train_end = int(train_percent * m)
-			valid_end = int(valid_percent * m) + train_end
-			train, valid, test = perm[:train_end], perm[train_end:valid_end], perm[valid_end:]
+		# Get the split indices
+		train_end = int(train_percent * m)
+		valid_end = int(valid_percent * m) + train_end
+		train, valid, test = perm[:train_end], perm[train_end:valid_end], perm[valid_end:]
 
-			self.data_splits.update({str(dataset): [train, valid, test]})
-		elif dataset == FIG_SHARE:
-			data = self.dataCollection[dataset]
-			total_slices = data['total_slices']
-			pid_slice_files_map = data['pid_slice_files_map'].copy()
-			train_count = int(train_percent * total_slices)
-			valid_count = int(valid_percent * total_slices)
-			train = []
-			valid = []
-			test = []
-			count_ = 0
-			while count_ < train_count:
-				random_pid = np.random.choice(list(pid_slice_files_map.keys()))
-				train.append(random_pid)
-				count_ += len(pid_slice_files_map[random_pid])
-				del pid_slice_files_map[random_pid]
-			count_ = 0
-			while count_ < valid_count:
-				random_pid = np.random.choice(list(pid_slice_files_map.keys()))
-				valid.append(random_pid)
-				count_ += len(pid_slice_files_map[random_pid])
-				del pid_slice_files_map[random_pid]
-
-			for pid, _ in pid_slice_files_map.items():
-				test.append(pid)
-
-			self.data_splits.update({str(dataset): [train, valid, test]})
-			
-
-
-
+		self.data_splits.update({str(dataset): [train, valid, test]})
 
 	def compile_dataset(self, params):
 		""" Extracts the features for the datasets and compiles them into a database
@@ -168,25 +130,21 @@ class DataManager(object):
 		dataset = params['dataset']
 		print(dataset)
 
+		filepath = self.information[dataset]['data_filepath']
+		featureExtractor = FeatureExtractor(params)
 
-		options = {}
-		if dataset == ADNI:
-			filepath = self.information[dataset][1]
-			featureExtractor = FeatureExtractor(params)
-		elif dataset == FIG_SHARE:
-			filepath = self.information[dataset]['directory']
-			featureExtractor = FeatureExtractor(params)
-			options = {'subject_id_files_map': self.dataCollection[dataset]['pid_slice_files_map']}
+		#options = {}
+		#if dataset == FIG_SHARE:
+		#	options = {'subject_id_files_map': self.dataCollection[dataset]['pid_slice_files_map']}
 
 		databases = {}
 		# Generate the databases
-		if dataset == ADNI or dataset == FIG_SHARE:
-			for ix, i in enumerate(['train', 'validation', 'test']):
-				print('extracting {}  data from {} ...'.format(i, dataset))
-				subjects = self.data_splits[dataset][ix]
-				data = featureExtractor.extract_features(subjects[0:2], dataset, filepath, options=options)
-				# Give a name to each of the data entries
-				for d in data: databases.update({i + '_' + d: data[d]})
+		for ix, i in enumerate(['train', 'validation', 'test']):
+			print('extracting {} data from {} ...'.format(i, dataset))
+			subjects = self.data_splits[dataset][ix]
+			data = featureExtractor.extract_features(subjects[0:2], dataset, filepath, metadata=self.dataCollection[dataset])
+			# Give a name to each of the data entries
+			for d in data: databases.update({i + '_' + d: data[d]})
 
 		# Write the datasets to the .h5 database file
 		write_data(databases, params, params['database_name'])
