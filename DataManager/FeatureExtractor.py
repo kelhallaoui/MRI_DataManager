@@ -88,6 +88,7 @@ class FeatureExtractor(object):
 
 						print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
 			return data_img_space, data_k_space
+		
 		elif dataset == 'FigShare':
 			data_img_space = []
 			data_k_space = []
@@ -101,18 +102,6 @@ class FeatureExtractor(object):
 					data_k_space.append(k_space)
 			return np.array(data_img_space), np.array(data_k_space, dtype=complex)
 
-		'''
-		elif dataset == 'FigShare':
-			for subject_id in subjects:
-				data_img_space = []
-				data_k_space = []
-				images = extractFigShare(filepath, subject_id, subject_id_files_map=options['subject_id_files_map'])
-				for image in images:
-					img_space, k_space = self.extract_image_and_k_space(image)
-					data_img_space.append(img_space)
-					data_k_space.append(k_space)
-			return np.array(data_img_space), np.array(data_k_space, dtype=complex)
-		'''
 	def extract_image_and_k_space(self, data, slice_ix = None):
 		""" Extracts the image space and k-space data
 

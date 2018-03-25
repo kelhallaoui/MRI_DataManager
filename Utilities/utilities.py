@@ -111,7 +111,7 @@ def extract_FigShare(filepath, filenames):
 		elif int(filename[:filename.index('.')]) <= 2298: file_ix = 2
 		elif int(filename[:filename.index('.')]) <= 3064: file_ix = 3
 		di = filepath + zip_files[file_ix] 
-		image = openFigShareInZip(di, filename)
+		image = open_FigShare_zip(di, filename)
 		slices.append(image)
 	return slices
 
@@ -146,7 +146,7 @@ def openFigShare(filepath):
 		image = np.array(f['cjdata']['image'])
 	return image
 
-def openFigShareInZip(zip_filepath, filename):
+def open_FigShare_zip(zip_filepath, filename):
 	"""Import data from FigShare zip file
 
 	Args:
@@ -163,7 +163,7 @@ def openFigShareInZip(zip_filepath, filename):
 			image = np.array(cjdata['image'])
 	return image
 
-def get_FigShare_patient_slice_files_map(directory):
+def get_FigShare_filemap(directory):
 	"""Get the map of {patient_id: slice_file} of FigShare data
 
 	Args:

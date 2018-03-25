@@ -2,7 +2,7 @@ import os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from Utilities.utilities import extract_NIFTI, read_CSV, write_data, get_FigShare_patient_slice_files_map
+from Utilities.utilities import extract_NIFTI, read_CSV, write_data, get_FigShare_filemap
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
@@ -59,8 +59,8 @@ class DataManager(object):
 				'cols':              [0, 3, 4, 6],
 				'key':               'Subject'},
 			FIG_SHARE: {
-				'data_filepath': filepath + r'/1512427/',
-				'key': 'Patient ID'
+				'data_filepath': 	 filepath + r'/1512427/',
+				'key': 				 'Patient ID'
 				}
 			}
 
@@ -80,9 +80,8 @@ class DataManager(object):
 				indices = self.information[dataset]['cols']
 				# Add dataset to the collection
 				self.dataCollection.update({str(dataset): read_CSV(filepath, indices)})
-			
 			elif dataset == FIG_SHARE:
-				pid_slice_files_map = get_FigShare_patient_slice_files_map(
+				pid_slice_files_map = get_FigShare_filemap(
 										self.information[dataset]['data_filepath'])
 				self.dataCollection.update({str(dataset): pid_slice_files_map})
 
