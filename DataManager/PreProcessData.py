@@ -8,7 +8,7 @@ import numpy as np
 import scipy as scipy
 import scipy.ndimage
 
-def extractSlice(data, slice_ix, orientation = 'axial'):
+def extract_slice(data, slice_ix, orientation = 'axial'):
 	""" Extract a slice from a volumetric image
 	
 	Args: 
@@ -31,7 +31,7 @@ def extractSlice(data, slice_ix, orientation = 'axial'):
 	else:
 		raise NameError('Undefined orientation!')
 
-def resizeImage(img, output_size):
+def resize_image(img, output_size):
 	""" Takes an image and brings it to a specified size
 	
 	Args:
@@ -76,13 +76,16 @@ def generate_synthetic_phase_map(kernel_size = 128, setting = 'sinusoid'):
 
 def inject_phase_map(img, phase_map):
 	""" Add a phase map to a real image
+
+	Args:
+		img (2d numpy): The absolute value of the image
+		phase_map (2d numpy): The phase of the image
+
+	Returns
+		(2d complex numpy): Add phase to the image
 	"""
-	def polar2z(r,theta):
-		return r * np.exp( 1j * theta )
-
-	def z2polar(z):
-		return ( np.abs(z), np.angle(z) )
-
+	def polar2z(r,theta): return r * np.exp( 1j * theta )
+	def z2polar(z): return ( np.abs(z), np.angle(z) )
 	polar_img = z2polar(img)
 	img = polar2z(polar_img[0], phase_map)
 	return img
@@ -98,8 +101,12 @@ def transform_to_k_space(img, acquisition = 'cartesian', sampling_percent = 1):
 		A complex 2D matrix with the FFT.
 	"""
 	if acquisition == 'cartesian':
+		n = img.shape[0]
 		freq = np.fft.fft2(img)
-		return np.fft.fftshift(freq)
+		k_space = np.fft.fftshift(freq)
+		k_space = k_space[int((1-sampling_percent)*n//2):int((1+sampling_percent)*n//2), :]
+		return k_space
+
 	elif acquisition == 'radial':
 
 		n = img.shape[0]
@@ -140,53 +147,76 @@ def introduce_gibbs_artifact(img, percent):
 	img = np.fft.ifft2(freq)
 	return np.abs(img)
 
-def add_tumor(img):
+def add_tumor(img, tumor_option = 'circle', radius = 0.05):
 	""" Add a tumor to a 2D image
 
-	A tumor is added at a random location, with a random size, and a 
-	random intensity, and Gaussian smoothed.
+    A tumor is added at a random location, with a random size, and a 
+    random intensity, and Gaussian smoothed. The center of the image is
+    the point (0,0). We first identify a random position for the tumor,
+    it will reside within the boundary (-shape/4, shape/4). This range
+    occupies half the image space. We then distort the horizontal and 
+    vertical radius by a factor of (0.5, 1.5). The radius is then set 
+    to be a percentage of the entire FOV.
 
-	Args:
-		img (2d numpy array): The image
+    Args:
+        img (2d numpy array): The image
+        radius (float): A percent of the FOV
 
-	Returns:
-		img (2d numpy array): The image with the tumor
-	"""
-
+    Returns:
+        img (2d numpy array): The image with the tumor
+    """
 	shape = img.shape
+	
+    # Random range for the tumor position
+	shift_x = np.random.uniform(-1*shape[0]//4,shape[0]//4)
+	shift_y = np.random.uniform(-1*shape[1]//4,shape[1]//4)
 
-	# Random range for the tumor position
-	shift_x = np.random.uniform(-1*int(shape[0]//4),int(shape[0]//4))
-	shift_y = np.random.uniform(-1*int(shape[1]//4),int(shape[1]//4))
-
-	# Distortion of the x and y axis to get a oval
+    # Distortion of the x and y axis to get a oval
 	dist_x, dist_y= np.random.uniform(0.5,1.5), np.random.uniform(0.5,1.5)
 
-	# Create the matrix within which we will create the tumor
+    # Create the matrix within which we will create the tumor
 	x = np.arange(-shape[0]//2, shape[0]//2, 1)
 	y = np.arange(-shape[1]//2, shape[1]//2, 1)
 	xx, yy = np.meshgrid(x, y, sparse=True)
-
-	# The circular tumor
-	z = (dist_x*(xx+shift_x))**2 + (dist_y*(yy+shift_y))**2
-	rad = 0.05*shape[0]
-
-	# Intensity of the pixels associated with the blood and the tumor
-	blood = np.random.uniform(0.8,1)
-	tumor = np.random.uniform(0.5,0.8)
-
-	# Size of the blood and tumor regions
-	blood_r = np.random.uniform(1.8,2.2)
-	tumor_r = np.random.uniform(0.5,1)
-
-	m = np.max(img)
-	img[z<int(blood_r*rad**2)] = blood*m
-	img[z<int(tumor_r*rad**2)] = tumor*m
+        
+    # The ditorted circular tumor
+	z = (dist_x*(xx-shift_x))**2 + (dist_y*(yy-shift_y))**2
 	
-	# Add a smoothing function to the real and imaginary part 
-	img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
-															 2, mode='constant')
-	return img
+	# The radius of the circular tumor
+	rad = radius*shape[0]
+	
+	if tumor_option == 'circle':    	
+    	# Size of the tumor region
+		tumor_r = np.random.uniform(0.8,2.2)
+    	
+		m = np.random.uniform(2*np.mean(img[shape[0]//4:3*shape[0]//4, 
+    	                                    shape[0]//4:3*shape[0]//4]), 
+    	                      np.max(img[shape[0]//4:3*shape[0]//4, 
+    	                                    shape[0]//4:3*shape[0]//4]))
+		img[z<int(tumor_r*rad**2)] = m
+    	
+    	# Add a smoothing function to the real and imaginary part 
+		img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
+    	                                                            2, mode='constant')
+		return img
+
+	elif tumor_option == 'ring':	
+		# Intensity of the pixels associated with the blood and the tumor
+		blood = np.random.uniform(0.8,1)
+		tumor = np.random.uniform(0.5,0.8)
+	
+		# Size of the blood and tumor regions
+		blood_r = np.random.uniform(1.8,2.2)
+		tumor_r = np.random.uniform(0.5,1)
+	
+		m = np.max(img)
+		img[z<int(blood_r*rad**2)] = blood*m
+		img[z<int(tumor_r*rad**2)] = tumor*m
+		
+		# Add a smoothing function to the real and imaginary part 
+		img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
+																 2, mode='constant')
+		return img
 
 def add_gaussian_noise(img, percent):
 	################ NEED TO CLEAN THIS FUNCTION #############################

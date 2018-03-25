@@ -1,6 +1,7 @@
 import numpy as np
 import zipfile
 from Utilities.utilities import extractNIFTI, extractFigShare
+from Utilities.utilities import extract_NIFTI
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
@@ -42,6 +43,23 @@ class FeatureExtractor(object):
 			return {'image': data_img, 'image_noisy': data_img_noisy}
 
 	
+	def get_batch_size(self, subjects, filepath):
+		""" Count the number of valid subjects in the filepath
+
+		Args:
+			subjects (list): ID of the subjects
+			filepath (string): the path to the data files
+
+		Returns
+			batch_size (int): number of valid subjects
+		"""
+		batch_size = 0
+		for subject_id in subjects:
+			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
+			if zipfile.is_zipfile(zip_filename): batch_size += 1
+		print('Total subjects: ', batch_size)
+		return batch_size
+
 	##########################################################################################
 	# 
 	# Image and k-space
@@ -49,19 +67,9 @@ class FeatureExtractor(object):
 	##########################################################################################
 	def extract_feature_image_and_k_space(self, subjects, dataset, filepath, scan_type = 'T1', options=None):
 		if dataset == 'ADNI':
+      
 			# Count the number of valid brains in the dataset
-			batch_size = 0
-			for subject_id in subjects:
-				zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-				if zipfile.is_zipfile(zip_filename): batch_size += 1
-			print('Total subjects: ', batch_size)
-
-			# Count the number of valid brains in the dataset
-			batch_size = 0
-			for subject_id in subjects:
-				zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-				if zipfile.is_zipfile(zip_filename): batch_size += 1
-			print('Total subjects: ', batch_size)
+		  batch_size = self.get_batch_size(subjects, filepath)
 
 			# Set containers in which to store the data
 			data_k_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
@@ -82,6 +90,7 @@ class FeatureExtractor(object):
 
 						print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
 			return data_img_space, data_k_space
+    
 		elif dataset == 'FigShare':
 			for subject_id in subjects:
 				data_img_space = []
@@ -93,7 +102,7 @@ class FeatureExtractor(object):
 					data_k_space.append(k_space)
 			return np.array(data_img_space), np.array(data_k_space, dtype=complex)
 
-	def extract_image_and_k_space(self, data, slice_ix=None):
+	def extract_image_and_k_space(self, data, slice_ix):
 		""" Extracts the image space and k-space data
 
 		Args:
@@ -123,11 +132,7 @@ class FeatureExtractor(object):
 	##########################################################################################
 	def extract_feature_image_and_gibbs(self, subjects, dataset, filepath, scan_type = 'T1', options=None):
 		# Count the number of valid brains in the dataset
-		batch_size = 0
-		for subject_id in subjects:
-			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-			if zipfile.is_zipfile(zip_filename): batch_size += 1
-		print('Total subjects: ', batch_size)
+		batch_size = self.get_batch_size(subjects, filepath)
 
 		# Set containers in which to store the data
 		data_img = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
@@ -140,7 +145,7 @@ class FeatureExtractor(object):
 			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
 			if zipfile.is_zipfile(zip_filename):
 				# Get the T1-weighted MRI image from the datasource and the current subject_id
-				data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
+				data, aff, hdr = extract_NIFTI(filepath, subject_id, scan_type)
 				for i in range(self.sequence):
 					img, gibbs_img, gibbs = self.extract_image_and_gibbs(data, self.slice_ix + i*0.003125)
 					data_img[batch_ix] = img
@@ -164,8 +169,8 @@ class FeatureExtractor(object):
 			k_space_img: The complex k-space
 		"""
 		# Extract the slice
-		img = extractSlice(data, slice_ix)
-		img = resizeImage(img, self.img_shape)
+		img = extract_slice(data, slice_ix)
+		img = resize_image(img, self.img_shape)
 		gibbs_img = introduce_gibbs_artifact(img, 0.8)
 		gibbs = gibbs_img - img
 		return img, gibbs_img, gibbs
@@ -177,17 +182,12 @@ class FeatureExtractor(object):
 	##########################################################################################
 	def extract_feature_add_tumor(self, subjects, dataset, filepath, options=None):
 		# Count the number of valid brains in the dataset
-		batch_size = 0
-		for subject_id in subjects:
-			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-			if zipfile.is_zipfile(zip_filename): batch_size += 1
-		print('Total subjects: ', batch_size)
+		batch_size = self.get_batch_size(subjects, filepath)
 
 		# Set containers in which to store the data
-		data_shape = (self.params['consec_slices']*batch_size, 
-					  self.params['img_shape'], 
-					  self.params['img_shape'])
-		data_img = np.zeros(data_shape, dtype=complex)
+		data_img = np.zeros((self.params['consec_slices']*batch_size, 
+					  		 self.params['img_shape'], 
+					  		 self.params['img_shape']), dtype=complex)
 		data_label = np.zeros((self.params['consec_slices']*batch_size, 1,), dtype=int)
 		data_k_space = []
 
@@ -197,14 +197,13 @@ class FeatureExtractor(object):
 			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
 			if zipfile.is_zipfile(zip_filename):
 				# Get the T1-weighted MRI image from the datasource and the current subject_id
-				data, aff, hdr = extractNIFTI(filepath, subject_id, self.params['scan_type'])
+				data, aff, hdr = extract_NIFTI(filepath, subject_id, self.params['scan_type'])
 				for slice_ix in range(self.params['consec_slices']):
 					img, k_space_img, label = self.extract_image_add_tumor(data, slice_ix)
 					data_img[batch_ix] = img
 					data_k_space.append(k_space_img)
 					data_label[batch_ix] = label
 					batch_ix += 1
-
 					print('Subject ID: ', subject_id, '     Slice Index: ', self.params['slice_ix'] + slice_ix*0.003125)
 		return data_img, np.asarray(data_k_space), data_label
 
@@ -220,15 +219,16 @@ class FeatureExtractor(object):
 			k_space_img: The complex k-space
 		"""
 		# Extract the slice
-		img = extractSlice(data, self.params['slice_ix'] + slice_ix*0.003125)
-		img = resizeImage(img, self.params['img_shape'])
+		img = extract_slice(data, self.params['slice_ix'] + slice_ix*0.003125)
+		img = resize_image(img, self.params['img_shape'])
 
+		# Randomly add tumor
 		label = np.random.randint(0,2)
-		if label == 1:
-			img = add_tumor(img)
+		if label == 1: img = add_tumor(img, 
+									   self.params['tumor_option'],
+									   self.params['tumor_radius'])
 
-		#phase_map = generate_synthetic_phase_map(self.img_shape)
-		#img = inject_phase_map(img, phase_map)
+		# Transform to k-space
 		k_space_img = transform_to_k_space(img, acquisition = self.params['acquisition_option'], 
 												sampling_percent = self.params['sampling_percent'])
 		return img, k_space_img, label
@@ -240,11 +240,7 @@ class FeatureExtractor(object):
 	##########################################################################################
 	def extract_feature_denoising(self, subjects, dataset, filepath, scan_type = 'T2', options=None):
 		# Count the number of valid brains in the dataset
-		batch_size = 0
-		for subject_id in subjects:
-			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
-			if zipfile.is_zipfile(zip_filename): batch_size += 1
-		print('Total subjects: ', batch_size)
+		batch_size = self.get_batch_size(subjects, filepath)
 
 		# Set containers in which to store the data
 		data_shape = (self.sequence*batch_size, self.img_shape, self.img_shape)
@@ -257,7 +253,7 @@ class FeatureExtractor(object):
 			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
 			if zipfile.is_zipfile(zip_filename):
 				# Get the T1-weighted MRI image from the datasource and the current subject_id
-				data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
+				data, aff, hdr = extract_NIFTI(filepath, subject_id, scan_type)
 				for i in range(self.sequence):
 					img, img_noisy = self.extract_image_noise(data, self.slice_ix + i*0.003125)
 
@@ -280,8 +276,8 @@ class FeatureExtractor(object):
 			k_space_img: The complex k-space
 		"""
 		# Extract the slice
-		img = extractSlice(data, slice_ix)
-		img = resizeImage(img, self.img_shape)
+		img = extract_slice(data, slice_ix)
+		img = resize_image(img, self.img_shape)
 		k_space_img = transform_to_k_space(img)
 		k_space_img_noisy = add_gaussian_noise(k_space_img, 0.05)
 		return k_space_img, k_space_img_noisy
