@@ -8,7 +8,7 @@ From a set of datasets these packages can extract features and load them into .h
 
 ## Feature Extraction Options
 - Image and k-space
-- Image and k-space with added tumors
+- Image and k-space with added tumors (circular or ring)
 - Image with and without Gibb's artifacts
 - Image with and without added Gaussian noise in the real and imaginary part of the k-space
 
