@@ -11,6 +11,7 @@ import skimage
 import os
 import contextlib
 import tempfile
+import medpy.io as mio
 
 def read_CSV(filename, use_cols):
 	""" Reads a CSV into a pandas dataframe.
@@ -45,7 +46,7 @@ def extract_NIFTI(filepath, subject_id, scan_type = 'T1'):
 	# Open the zip file
 	if scan_type == 'T1':
 		filename = str(subject_id) + '/unprocessed/3T/T1w_MPR1/' + \
-		           str(subject_id) + '_3T_T1w_MPR1.nii.gz'
+				   str(subject_id) + '_3T_T1w_MPR1.nii.gz'
 
 		with zipfile.ZipFile(zip_filename, 'r') as zf:
 			# If the internal file is not found.
@@ -59,11 +60,11 @@ def extract_NIFTI(filepath, subject_id, scan_type = 'T1'):
 
 	elif scan_type == 'T2':
 		filename_t2 = str(subject_id) + '/unprocessed/3T/T2w_SPC1/' + \
-		              str(subject_id) + '_3T_T2w_SPC1.nii.gz'
+					  str(subject_id) + '_3T_T2w_SPC1.nii.gz'
 		filename_bc = str(subject_id) + '/unprocessed/3T/T2w_SPC1/' + \
-		              str(subject_id) + '_3T_BIAS_BC.nii.gz'
+					  str(subject_id) + '_3T_BIAS_BC.nii.gz'
 		filename_ch = str(subject_id) + '/unprocessed/3T/T2w_SPC1/' + \
-		              str(subject_id) + '_3T_BIAS_32CH.nii.gz'
+					  str(subject_id) + '_3T_BIAS_32CH.nii.gz'
 	
 		print('Filename: ', filename_t2)
 		with zipfile.ZipFile(zip_filename, 'r') as zf:
@@ -128,6 +129,26 @@ def extract_FigShare(filepath, filenames):
 		slices.append(image)
 	return slices
 
+def extract_BRATS(filepath, scan_type='T1'):
+	keyword = ''
+	if scan_type == 'T1':
+		keyword = 'MR_T1'
+	elif scan_type == 'T2':
+		keyword = 'MR_T2'
+	filepath_ = ''
+	for directory in os.listdir(filepath):
+		if os.path.isdir(os.path.join(filepath, directory)):
+			if keyword in directory.split('.'):
+				for file in os.listdir(os.path.join(filepath, directory)):
+					if file.split('.')[-1] == 'mha':
+						filepath_ = os.path.join(filepath, directory, file)
+						break
+				break
+
+	data, header = open_BRATS(filepath_)
+	return data, header
+
+
 def open_NIFTI(filename):
 	"""Imports data from the NIFTI files
 
@@ -149,7 +170,7 @@ def openFigShare(filepath):
 	"""Import data from FigShare files
 
 	Args:
-			filepath (string): filepath to the FigShare file
+		filepath (string): filepath to the FigShare file
 
 	Returns:
 		data (2D numpy): the slice of 2D image of brain with tumor
@@ -163,8 +184,8 @@ def open_FigShare_zip(zip_filepath, filename):
 	"""Import data from FigShare zip file
 
 	Args:
-			zip_filepath (string): filepath to the FigShare zip
-			filename (string): filename of the FigShare file in zip to be extracted
+		zip_filepath (string): filepath to the FigShare zip
+		filename (string): filename of the FigShare file in zip to be extracted
 
 	Returns:
 		data (2D numpy): the slice of 2D image of brain with tumor
@@ -176,11 +197,26 @@ def open_FigShare_zip(zip_filepath, filename):
 			image = np.array(cjdata['image'])
 	return image
 
+def open_BRATS(filepath):
+	"""Import data from FigShare files
+
+	Args:
+		filepath (string): filepath to the FigShare file
+
+	Returns:
+		data: the 3D image of brain with tumor
+	"""
+	print('FILEPATH BRATS {}'.format(filepath))
+	data, header = mio.load(filepath)
+	data = np.array(data).transpose()
+	return data, header
+
+
 def get_FigShare_filemap(directory):
 	"""Get the map of {patient_id: slice_file} of FigShare data
 
 	Args:
-			directory (string): filepath to the FigShare directory
+		directory (string): filepath to the FigShare directory
 	Returns:
 		map: key -> patient id, value -> array of slice filenames of mri
 	"""
@@ -218,6 +254,39 @@ def get_FigShare_filemap(directory):
 	d = {'Patient ID': [i for i in slices], 'File Map': [slices[i] for i in slices]}
 	df = pd.DataFrame(d)
 	df = df[['Patient ID', 'File Map']]						
+	return df
+
+def get_BRRATS_filemap(directory):
+	"""Get the map of {subject_id: mri} of BRATS data
+
+	Args:
+		directory (string): fielapth to the BRATS directory
+	Returns:
+		map: key -> subject id, value -> mri filepath
+	"""
+
+	subjects_dirs = []
+	for path, subdirs, files in os.walk(directory):
+		for file in files:
+			filepath = os.path.join(path, file)
+			if filepath.split('.')[-1] == 'mha' :
+				subjects_dir = '/'.join(filepath.split('/')[0:-3])
+				if subjects_dir not in subjects_dirs:
+					subjects_dirs.append(subjects_dir)
+
+	subject_filemap = {}
+	subject_id = 1
+	for subjects_dir in subjects_dirs:
+		for subject in os.listdir(subjects_dir):
+			filepath = os.path.join(subjects_dir, subject)
+			if os.path.isdir(filepath):
+				subject_filemap[str(subject_id)] = filepath
+				subject_id += 1
+			
+
+	d = {'Subject': [i for i in subject_filemap], 'File Map': [subject_filemap[i] for i in subject_filemap]}
+	df = pd.DataFrame(d)
+	df = df[['Subject', 'File Map']]
 	return df
 
 def write_data(databases, attributes, filename):
