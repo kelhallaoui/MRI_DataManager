@@ -12,3 +12,8 @@ From a set of datasets these packages can extract features and load them into .h
 - Image with and without Gibb's artifacts
 - Image with and without added Gaussian noise in the real and imaginary part of the k-space
 
+# Install MedPy for python3
+```
+sudo pip install nibabel pydicom
+sudo pip install https://github.com/loli/medpy/archive/Release_0.3.0p3.zip
+```
