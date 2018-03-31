@@ -28,6 +28,17 @@ dataManager.compile_dataset(params)
 
 
 
+#Example to extract BRATS Dataset
+# dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['BRATS'])
+
+# params = {'database_name': 		'brats_data',
+# 		  'dataset': 			'BRATS',
+# 		  'feature_option':		'image_and_k_space',
+# 		  'img_shape': 			128,
+# 		  'num_subjects': 		'all',
+# 		  'slice_ix': 			0.52,
+# 		  'consec_slices':		30,
+# 		  }
 
 
 
