@@ -27,7 +27,38 @@ dataManager.compile_dataset(params)
 # Example to extract data from the ADNI dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-params = {'database_name': 		'data_tumor_cross',
+#Example to extract BRATS Dataset
+# dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['BRATS'])
+
+# params = {'database_name': 		'brats_data',
+# 		  'dataset': 			'BRATS',
+# 		  'feature_option':		'image_and_k_space',
+# 		  'img_shape': 			128,
+# 		  'num_subjects': 		'all',
+# 		  'slice_ix': 			0.52,
+# 		  'consec_slices':		30,
+# 		  }
+
+
+
+
+#print(dataManager.getData('ADNI', 'Subject'))
+#print(dataManager.getKeys('ADNI'))
+#coll = dataManager.getDataCollection()
+
+#dataManager.viewSubject('ADNI', 100206)
+
+#print(dataManager.dataCollection['ADNI']['Subject'])
+
+#print(dataManager.data_splits['ADNI'][2].shape)
+
+#dataManager.compileDataset('data', 'ADNI', option = 'image_and_k_space', slice_ix = 0.52, img_shape = 128)
+
+#dataManager.compileDataset('data_gibbs', 'ADNI', option = 'image_and_gibbs', slice_ix = 0.52, img_shape = 128)
+
+
+params = {'database_name': 		'data_tumor_TEST',
+
 		  'dataset': 			'ADNI',
 		  'feature_option':		'add_tumor',
 		  'slice_ix': 			0.52, #0.32, #0.52,
