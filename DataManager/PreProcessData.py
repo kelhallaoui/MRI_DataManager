@@ -92,10 +92,16 @@ def inject_phase_map(img, phase_map):
 
 def transform_to_k_space(img, acquisition = 'cartesian', sampling_percent = 1):
 	""" Transforms the image to the k-space and shifts the 0-freq to the 
-	center.
+	center. 
+
+	Supports 'cartesian' and 'radial' acquisition.
 
 	Args:
 		img (2d numpy array): The image
+		acquisition (str): The type of acquisition scheme. 'cartesian' and 'radial'
+						   supported.
+		sampling_percent (int): Value in [0, 1] defining the amount of sampling
+								lines to keep.
 
 	Returns 
 		A complex 2D matrix with the FFT.
@@ -104,6 +110,7 @@ def transform_to_k_space(img, acquisition = 'cartesian', sampling_percent = 1):
 		n = img.shape[0]
 		freq = np.fft.fft2(img)
 		k_space = np.fft.fftshift(freq)
+		# Performs the truncation based on the desired range
 		k_space = k_space[int((1-sampling_percent)*n//2):int((1+sampling_percent)*n//2), :]
 		return k_space
 

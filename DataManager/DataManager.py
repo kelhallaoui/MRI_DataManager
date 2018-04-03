@@ -141,7 +141,7 @@ class DataManager(object):
 		for ix, i in enumerate(['train', 'validation', 'test']):
 			print('extracting {} data from {} ...'.format(i, dataset))
 			subjects = self.data_splits[dataset][ix]
-			data = featureExtractor.extract_features(subjects[0:2], dataset, filepath, metadata=self.dataCollection[dataset])
+			data = featureExtractor.extract_features(subjects, dataset, filepath, metadata=self.dataCollection[dataset])
 			# Give a name to each of the data entries
 			for d in data: databases.update({i + '_' + d: data[d]})
 
