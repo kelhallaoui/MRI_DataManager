@@ -1,6 +1,6 @@
 import numpy as np
 import zipfile
-from Utilities.utilities import extract_NIFTI, extract_FigShare, extract_BRATS
+from Utilities.utilities import extract_NIFTI, extract_FigShare
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
@@ -70,8 +70,8 @@ class FeatureExtractor(object):
 			batch_size = self.get_batch_size(subjects, filepath)
 
 			# Set containers in which to store the data
-			data_k_space = np.zeros((self.params['consec_slices']*batch_size, self.params['img_shape'], self.params['img_shape']), dtype=complex)
-			data_img_space = np.zeros((self.params['consec_slices']*batch_size, self.params['img_shape'], self.params['img_shape']), dtype=complex)
+			data_k_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+			data_img_space = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
 
 			# Extract the data
 			batch_ix = 0
@@ -80,32 +80,20 @@ class FeatureExtractor(object):
 				if zipfile.is_zipfile(zip_filename):
 					# Get the T1-weighted MRI image from the datasource and the current subject_id
 					data, aff, hdr = extractNIFTI(filepath, subject_id, scan_type)
-					for i in range(self.params['consec_slices']):
-						img, k_space_img = self.extract_image_and_k_space(data, slice_ix=self.params['slice_ix'] + i*0.003125)
+					for i in range(self.sequence):
+						img, k_space_img = self.extract_image_and_k_space(data, slice_ix=self.slice_ix + i*0.003125)
 						data_k_space[batch_ix] = k_space_img
 						data_img_space[batch_ix] = img
 						batch_ix += 1
 
-						print('Subject ID: ', subject_id, '     Slice Index: ', self.params['slice_ix'] + i*0.003125)
+						print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
 			return data_img_space, data_k_space
-		elif dataset == 'BRATS':
-			data_k_space = []
-			data_img_space = []
-			for subject_id in subjects:
-				file = metadata.loc[metadata['Subject'] == subject_id, 'File Map'].iloc[0]
-				data, header = extract_BRATS(file, scan_type=scan_type)
-				for i in range(self.params['consec_slices']):
-					img, k_space_img = self.extract_image_and_k_space(data, slice_ix=self.params['slice_ix'] + i*0.003125)
-					data_k_space.append(k_space_img)
-					data_img_space.append(img)
-
-					print('Subject ID: ', subject_id, '     Slice Index: ', self.params['slice_ix'] + i*0.003125)
-			return np.array(data_img_space, dtype=complex), np.array(data_k_space, dtype=complex)
+		
 		elif dataset == 'FigShare':
 			data_img_space = []
 			data_k_space = []
 			for subject_id in subjects:
-				print('ID', subject_id)
+				print('ID', type(subject_id))
 				files = metadata.loc[metadata['Patient ID'] == subject_id, 'File Map'].iloc[0]
 				images = extract_FigShare(filepath, files)
 				for image in images:
@@ -113,7 +101,6 @@ class FeatureExtractor(object):
 					data_img_space.append(img_space)
 					data_k_space.append(k_space)
 			return np.array(data_img_space), np.array(data_k_space, dtype=complex)
-
 
 	def extract_image_and_k_space(self, data, slice_ix = None):
 		""" Extracts the image space and k-space data
@@ -148,9 +135,9 @@ class FeatureExtractor(object):
 		batch_size = self.get_batch_size(subjects, filepath)
 
 		# Set containers in which to store the data
-		data_img = np.zeros((self.params['consec_slices']*batch_size, self.params['img_shape'], self.params['img_shape']), dtype=complex)
-		data_img_gibbs = np.zeros((self.params['consec_slices']*batch_size, self.params['img_shape'], self.params['img_shape']), dtype=complex)
-		data_gibbs = np.zeros((self.params['consec_slices']*batch_size, self.params['img_shape'], self.params['img_shape']), dtype=complex)
+		data_img = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+		data_img_gibbs = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
+		data_gibbs = np.zeros((self.sequence*batch_size, self.img_shape, self.img_shape), dtype=complex)
 
 		# Extract the data
 		batch_ix = 0
@@ -159,14 +146,14 @@ class FeatureExtractor(object):
 			if zipfile.is_zipfile(zip_filename):
 				# Get the T1-weighted MRI image from the datasource and the current subject_id
 				data, aff, hdr = extract_NIFTI(filepath, subject_id, scan_type)
-				for i in range(self.params['consec_slices']):
-					img, gibbs_img, gibbs = self.extract_image_and_gibbs(data, self.params['slice_ix'] + i*0.003125)
+				for i in range(self.sequence):
+					img, gibbs_img, gibbs = self.extract_image_and_gibbs(data, self.slice_ix + i*0.003125)
 					data_img[batch_ix] = img
 					data_img_gibbs[batch_ix] = gibbs_img
 					data_gibbs[batch_ix] = gibbs
 					batch_ix += 1
 
-					print('Subject ID: ', subject_id, '     Slice Index: ', self.params['slice_ix'] + i*0.003125)
+					print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
 
 		return data_img_gibbs, data_gibbs
 
@@ -183,7 +170,7 @@ class FeatureExtractor(object):
 		"""
 		# Extract the slice
 		img = extract_slice(data, slice_ix)
-		img = resize_image(img, self.params['img_shape'])
+		img = resize_image(img, self.img_shape)
 		gibbs_img = introduce_gibbs_artifact(img, 0.8)
 		gibbs = gibbs_img - img
 		return img, gibbs_img, gibbs
@@ -231,16 +218,16 @@ class FeatureExtractor(object):
 			img: The complex image space
 			k_space_img: The complex k-space
 		"""
+		# Get the tumor intensity to be close to the CSF
+		tumor_intensity = 255*get_csf_intensity(data)/np.max(np.abs(data))
 		# Extract the slice
 		img = extract_slice(data, self.params['slice_ix'] + slice_ix*0.003125)
 		img = resize_image(img, self.params['img_shape'])
-
 		# Randomly add tumor
 		label = np.random.randint(0,2)
-		if label == 1: img = add_tumor(img, 
+		if label == 1: img = add_tumor(img, tumor_intensity,
 									   self.params['tumor_option'],
 									   self.params['tumor_radius'])
-
 		# Transform to k-space
 		k_space_img = transform_to_k_space(img, acquisition = self.params['acquisition_option'], 
 												sampling_percent = self.params['sampling_percent'])
@@ -256,7 +243,7 @@ class FeatureExtractor(object):
 		batch_size = self.get_batch_size(subjects, filepath)
 
 		# Set containers in which to store the data
-		data_shape = (self.params['consec_slices']*batch_size, self.params['img_shape'], self.params['img_shape'])
+		data_shape = (self.sequence*batch_size, self.img_shape, self.img_shape)
 		data_img = np.zeros(data_shape, dtype=complex)
 		data_img_noisy = np.zeros(data_shape, dtype=complex)
 
@@ -267,14 +254,14 @@ class FeatureExtractor(object):
 			if zipfile.is_zipfile(zip_filename):
 				# Get the T1-weighted MRI image from the datasource and the current subject_id
 				data, aff, hdr = extract_NIFTI(filepath, subject_id, scan_type)
-				for i in range(self.params['consec_slices']):
-					img, img_noisy = self.extract_image_noise(data, self.params['slice_ix'] + i*0.003125)
+				for i in range(self.sequence):
+					img, img_noisy = self.extract_image_noise(data, self.slice_ix + i*0.003125)
 
 					data_img[batch_ix] = img
 					data_img_noisy[batch_ix] = img_noisy
 					batch_ix += 1
 
-					print('Subject ID: ', subject_id, '     Slice Index: ', self.params['slice_ix'] + i*0.003125)
+					print('Subject ID: ', subject_id, '     Slice Index: ', self.slice_ix + i*0.003125)
 		return data_img, data_img_noisy
 
 	def extract_image_noise(self, data, slice_ix):
@@ -290,7 +277,7 @@ class FeatureExtractor(object):
 		"""
 		# Extract the slice
 		img = extract_slice(data, slice_ix)
-		img = resize_image(img, self.params['img_shape'])
+		img = resize_image(img, self.img_shape)
 		k_space_img = transform_to_k_space(img)
 		k_space_img_noisy = add_gaussian_noise(k_space_img, 0.05)
 		return k_space_img, k_space_img_noisy

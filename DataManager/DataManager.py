@@ -2,20 +2,13 @@ import os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from Utilities.utilities import (
-	extract_NIFTI,
-	read_CSV,
-	write_data,
-	get_FigShare_filemap,
-	get_BRRATS_filemap,
-)
+from Utilities.utilities import extract_NIFTI, read_CSV, write_data, get_FigShare_filemap
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
 
 ADNI = 'ADNI'
 FIG_SHARE = 'FigShare'
-BRATS = 'BRATS'
 
 class DataManager(object):
 	""" Organization of the data
@@ -48,7 +41,7 @@ class DataManager(object):
 			                      	  num_slices: total number of MRI slices
 	"""
 
-	supported_datasets = [ADNI, FIG_SHARE, BRATS]
+	supported_datasets = [ADNI, FIG_SHARE]
 
 	def __init__(self, filepath, datasets = None):
 		for dataset in datasets:
@@ -68,10 +61,6 @@ class DataManager(object):
 			FIG_SHARE: {
 				'data_filepath': 	 filepath + r'/1512427/',
 				'key': 				 'Patient ID'
-				},
-			BRATS: {
-				'data_filepath': 	 filepath + r'/BRATS/',
-				'key': 				 'Subject'
 				}
 			}
 
@@ -95,9 +84,6 @@ class DataManager(object):
 				pid_slice_files_map = get_FigShare_filemap(
 										self.information[dataset]['data_filepath'])
 				self.dataCollection.update({str(dataset): pid_slice_files_map})
-			elif dataset == BRATS:
-				subject_id_files_map = get_BRRATS_filemap(self.information[dataset]['data_filepath'])
-				self.dataCollection.update({str(dataset): subject_id_files_map})
 
 			key = self.information[dataset]['key']
 			self.train_validate_test_split(dataset, column_header=key)

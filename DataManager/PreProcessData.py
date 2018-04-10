@@ -154,7 +154,16 @@ def introduce_gibbs_artifact(img, percent):
 	img = np.fft.ifft2(freq)
 	return np.abs(img)
 
-def add_tumor(img, tumor_option = 'circle', radius = 0.05):
+def get_csf_intensity(data, percentage = 0.00001):
+
+	shape = data.shape
+	vals = data[shape[0]//4:3*shape[0]//4,
+                shape[1]//4:3*shape[1]//4,
+                shape[2]//4:3*shape[2]//4].flatten()
+	temp = np.mean(np.sort(vals)[::-1][0:int(percentage*vals.shape[0])])
+	return temp
+
+def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05):
 	""" Add a tumor to a 2D image
 
     A tumor is added at a random location, with a random size, and a 
@@ -179,7 +188,7 @@ def add_tumor(img, tumor_option = 'circle', radius = 0.05):
 	shift_y = np.random.uniform(-1*shape[1]//4,shape[1]//4)
 
     # Distortion of the x and y axis to get a oval
-	dist_x, dist_y= np.random.uniform(0.5,1.5), np.random.uniform(0.5,1.5)
+	dist_x, dist_y= np.random.uniform(0.3, 1), np.random.uniform(0.3, 1)
 
     # Create the matrix within which we will create the tumor
 	x = np.arange(-shape[0]//2, shape[0]//2, 1)
@@ -187,24 +196,21 @@ def add_tumor(img, tumor_option = 'circle', radius = 0.05):
 	xx, yy = np.meshgrid(x, y, sparse=True)
         
     # The ditorted circular tumor
-	z = (dist_x*(xx-shift_x))**2 + (dist_y*(yy-shift_y))**2
+	z = dist_x*(xx-shift_x)**2 + dist_y*(yy-shift_y)**2
 	
 	# The radius of the circular tumor
-	rad = radius*shape[0]
+	rad = radius*shape[0]//2
 	
 	if tumor_option == 'circle':    	
     	# Size of the tumor region
-		tumor_r = np.random.uniform(0.8,2.2)
+		tumor_r = np.random.uniform(0.5, 1.5)
     	
-		m = np.random.uniform(2*np.mean(img[shape[0]//4:3*shape[0]//4, 
-    	                                    shape[0]//4:3*shape[0]//4]), 
-    	                      np.max(img[shape[0]//4:3*shape[0]//4, 
-    	                                    shape[0]//4:3*shape[0]//4]))
-		img[z<int(tumor_r*rad**2)] = m
+		m = np.random.uniform(0.9*intensity, intensity)
+		img[z<int((tumor_r * rad)**2)] = m
     	
     	# Add a smoothing function to the real and imaginary part 
-		img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
-    	                                                            2, mode='constant')
+		#img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
+    	#                                                            0.5, mode='constant')
 		return img
 
 	elif tumor_option == 'ring':	
