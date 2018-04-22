@@ -1,6 +1,6 @@
 import numpy as np
 import zipfile
-from Utilities.utilities import extract_NIFTI, extract_FigShare
+from Utilities.utilities import extract_NIFTI, extract_FigShare, extract_BRATS
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
@@ -44,6 +44,7 @@ class FeatureExtractor(object):
 			data_img     = np.zeros(data_shape, dtype=complex)
 			data_k_space = np.zeros(data_shape, dtype=complex)
 			data_label   = np.zeros((self.batch_size, 1,), dtype=int)
+			#data_slice_ix = ...
 			data_batch = [data_img, data_k_space, data_label]
 		elif self.params['feature_option'] is 'image_and_k_space':
 			data_k_space   = np.zeros(data_shape, dtype=complex)
@@ -64,10 +65,15 @@ class FeatureExtractor(object):
 		for subject_id in subjects:
 			zip_filename = filepath + str(subject_id) + '_3T_Structural_unproc.zip'
 			if zipfile.is_zipfile(zip_filename):
-				# Get the T1-weighted MRI image from the datasource and the current subject_id
-				data, aff, hdr = extract_NIFTI(filepath, subject_id, self.params['scan_type'])
-				for slice_ix in range(self.params['consec_slices']):
 
+				if dataset == 'ADNI':
+					data, aff, hdr = extract_NIFTI(filepath, subject_id, self.params['scan_type'])
+				elif dataset == 'FigShare':
+					raise NameError('Feature Extraction not implemented for FigShare data!')
+				elif dataset == 'BRATS':
+					raise NameError('Feature Extraction not implemented for BRATS data!')
+
+				for slice_ix in range(num_slices):
 					if self.params['feature_option'] is 'add_tumor':
 						outputs = self.extract_image_add_tumor(data, slice_ix)
 					elif self.params['feature_option'] is 'image_and_k_space':
