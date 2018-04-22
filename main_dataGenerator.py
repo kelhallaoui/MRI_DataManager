@@ -27,47 +27,79 @@ dataManager.compile_dataset(params)
 # Example to extract data from the ADNI dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-params = {'database_name': 		'data_tumor_TEST',
+params = {'database_name': 		'data_tumor_size10_large',
 		  'dataset': 			'ADNI',
+		  'batch_size':         32,
 		  'feature_option':		'add_tumor',
 		  'slice_ix': 			0.52, #0.32, #0.52,
 		  'img_shape': 			128,
-		  'consec_slices':		30, #120,#30,
+		  'consec_slices':		120, #120,#30,
 		  'num_subjects': 		'all',
 		  'scan_type': 			'T2',
 		  'acquisition_option':	'cartesian',
 		  'sampling_percent': 	1, #0.0625,
 		  'accel_factor':       0, # How to implement this?
 		  'tumor_option':		'circle',
-		  'tumor_radius':       0.05,
-		  'tumor_radius_range': [0.8,2.2],
-		  'distort_mult_range': [0.5,1.5]}
+		  'tumor_radius':       0.10,
+		  'tumor_radius_range': [0.8,1.2]}
 
 dataManager.compile_dataset(params)
 
+with h5py.File('experiments/data_tumor_size10_large.h5', 'r') as hf:
+	keys = list(hf.keys())
+	print(keys)
+
+	dataset = 'validation'
+	X_identifier = 'k_space'
+	Y_identifier = 'label'
+
+	temp = [i for i in keys if dataset+'_'+X_identifier in i]
+	x_dims = hf[temp[0]].shape[1::]
+	num_files = len(temp)
+	print(num_files)
+
+	# Get dimensions of the output space
+	temp = [i for i in keys if dataset+'_'+Y_identifier in i]
+	y_dims = hf[temp[0]].shape[1::]
+
+	# Get the number of records per file
+	num_records = hf[temp[0]].shape[0]
+	total_records = np.sum([hf[i].shape[0] for i in temp])
+
+	print(num_records)
+	print(total_records)
+	print([hf[i].shape[0] for i in temp])
+
+'''
 data = {}
-hf = h5py.File('experiments/data_tumor_TEST.h5', 'r')
+hf = h5py.File('experiments/data_tumor_TEST_batch.h5', 'r')
 print([key for key in hf.keys()])
+print('--------------DATA KEYS------------------')
+for key in hf.keys():
+	print(key)
+	#vals = list(hf[key])
+	#data.update({key: np.asarray(vals)})
+print('------------------------------------------')
+print('--------------PARAMETERS------------------')
+for item in hf.attrs.keys():
+	print(item + ":", hf.attrs[item])
+	if item == 'subjects_train':
+		print(len(hf.attrs[item]))
+print('------------------------------------------')
 for key in hf.keys():
 	print(key)
 	vals = list(hf[key])
 	data.update({key: np.asarray(vals)})
+	break
 hf.close()
 
 print(list(data.keys()))
-
 for d in list(data.keys()):
 	print(d, data[d].shape)
-
-
-ix = 0
-
-plt.subplot(1,2,1)
-plt.imshow(np.abs(np.rot90(data['train_image'][ix])), cmap = 'gray')
-plt.subplot(1,2,2)
-plt.imshow(np.log(np.abs(np.rot90(data['train_k_space'][ix]))), cmap = 'gray')
+ix = 9
+plt.imshow(np.abs(np.rot90(data[key][ix])), cmap = 'gray')
 plt.show()
-
+'''
 
 '''
 plt.subplot(2,2,1)

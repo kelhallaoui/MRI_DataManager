@@ -154,16 +154,28 @@ def introduce_gibbs_artifact(img, percent):
 	img = np.fft.ifft2(freq)
 	return np.abs(img)
 
-def get_csf_intensity(data, percentage = 0.00001):
+def get_csf_intensity(data):
+	""" Gets the intensity of the CSF pixels 
 
+	Tumors should have the same intensity as the CSF in T2 MRI imaging. 
+	This function will get the intensity of this region in an approximate 
+	way. 
+
+	Args: 
+		data (3d numpy): The volmetric MRI image
+
+	Returns:
+		The intensity value of the CSF
+	"""
 	shape = data.shape
 	vals = data[shape[0]//4:3*shape[0]//4,
                 shape[1]//4:3*shape[1]//4,
                 shape[2]//4:3*shape[2]//4].flatten()
-	temp = np.mean(np.sort(vals)[::-1][0:int(percentage*vals.shape[0])])
+	#temp = np.mean(np.sort(vals)[::-1][0:int(percentage*vals.shape[0])])
+	temp = np.max(vals)
 	return temp
 
-def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05):
+def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05, radius_range = [0.8,1.2]):
 	""" Add a tumor to a 2D image
 
     A tumor is added at a random location, with a random size, and a 
@@ -203,9 +215,10 @@ def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05):
 	
 	if tumor_option == 'circle':    	
     	# Size of the tumor region
-		tumor_r = np.random.uniform(0.5, 1.5)
+		tumor_r = np.random.uniform(radius_range[0], radius_range[1])
     	
-		m = np.random.uniform(0.9*intensity, intensity)
+		#m = np.random.uniform(0.9*intensity, intensity)
+		m = intensity
 		img[z<int((tumor_r * rad)**2)] = m
     	
     	# Add a smoothing function to the real and imaginary part 

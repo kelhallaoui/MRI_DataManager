@@ -6,6 +6,7 @@ from Utilities.utilities import extract_NIFTI, read_CSV, write_data, get_FigShar
 from DataManager.PreProcessData import *
 from DataManager.FeatureExtractor import *
 import numpy as np
+import h5py
 
 ADNI = 'ADNI'
 FIG_SHARE = 'FigShare'
@@ -40,7 +41,6 @@ class DataManager(object):
 			                      	  directory: path to the directory containing FigShare data
 			                      	  num_slices: total number of MRI slices
 	"""
-
 	supported_datasets = [ADNI, FIG_SHARE]
 
 	def __init__(self, filepath, datasets = None):
@@ -127,8 +127,6 @@ class DataManager(object):
 
 		"""
 		dataset = params['dataset']
-		print(dataset)
-
 		filepath = self.information[dataset]['data_filepath']
 		featureExtractor = FeatureExtractor(params)
 
@@ -136,17 +134,21 @@ class DataManager(object):
 		#if dataset == FIG_SHARE:
 		#	options = {'subject_id_files_map': self.dataCollection[dataset]['pid_slice_files_map']}
 
-		databases = {}
-		# Generate the databases
-		for ix, i in enumerate(['train', 'validation', 'test']):
-			print('extracting {} data from {} ...'.format(i, dataset))
-			subjects = self.data_splits[dataset][ix]
-			data = featureExtractor.extract_features(subjects, dataset, filepath, metadata=self.dataCollection[dataset])
-			# Give a name to each of the data entries
-			for d in data: databases.update({i + '_' + d: data[d]})
+		with h5py.File('experiments/'+params['database_name']+'.h5', 'w') as hf:
+			for param in params:
+				print(param, ': ', params[param])
+				hf.attrs[param] = params[param]
 
-		# Write the datasets to the .h5 database file
-		write_data(databases, params, params['database_name'])
+			for ix, data_split in enumerate(['train', 'validation', 'test']):
+				print('extracting {} data from {} ...'.format(data_split, dataset))
+				subjects = self.data_splits[dataset][ix]
+				hf.attrs['subjects_'+data_split] = subjects
+				f = featureExtractor.extract_features(subjects, dataset, 
+													  filepath, metadata=self.dataCollection[dataset])
+				for ix, data in enumerate(f):
+					for d in data:
+						print(data_split+'_'+d)
+						hf.create_dataset(data_split+'_'+d+'_'+str(ix), data=data[d])
 
 	def get_data_collection(self):
 		return self.dataCollection

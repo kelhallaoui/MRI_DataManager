@@ -110,6 +110,7 @@ def extract_NIFTI(filepath, subject_id, scan_type = 'T1'):
 			return t2, aff, hdr
 	else: raise NameError('Invalid acquisition. Either \'T1\' or \'T2\'')
 
+
 def extract_FigShare(filepath, filenames):
 	zip_files = [r'brainTumorDataPublic_1-766.zip',
 				 r'brainTumorDataPublic_767-1532.zip',
