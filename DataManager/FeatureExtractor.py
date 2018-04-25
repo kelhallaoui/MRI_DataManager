@@ -73,7 +73,7 @@ class FeatureExtractor(object):
 				elif dataset == 'BRATS':
 					raise NameError('Feature Extraction not implemented for BRATS data!')
 
-				for slice_ix in range(num_slices):
+				for slice_ix in range(self.params['consec_slices']):
 					if self.params['feature_option'] is 'add_tumor':
 						outputs = self.extract_image_add_tumor(data, slice_ix)
 					elif self.params['feature_option'] is 'image_and_k_space':

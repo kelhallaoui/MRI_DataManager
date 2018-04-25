@@ -11,7 +11,7 @@ import skimage
 import os
 import contextlib
 import tempfile
-import medpy.io as mio
+#import medpy.io as mio
 
 def read_CSV(filename, use_cols):
 	""" Reads a CSV into a pandas dataframe.

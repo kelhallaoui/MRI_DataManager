@@ -27,7 +27,7 @@ dataManager.compile_dataset(params)
 # Example to extract data from the ADNI dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-params = {'database_name': 		'data_tumor_size10_large',
+params = {'database_name': 		'data_tumor_size5_large',
 		  'dataset': 			'ADNI',
 		  'batch_size':         32,
 		  'feature_option':		'add_tumor',
@@ -40,12 +40,12 @@ params = {'database_name': 		'data_tumor_size10_large',
 		  'sampling_percent': 	1, #0.0625,
 		  'accel_factor':       0, # How to implement this?
 		  'tumor_option':		'circle',
-		  'tumor_radius':       0.10,
+		  'tumor_radius':       0.05,
 		  'tumor_radius_range': [0.8,1.2]}
 
-dataManager.compile_dataset(params)
+#dataManager.compile_dataset(params)
 
-with h5py.File('experiments/data_tumor_size10_large.h5', 'r') as hf:
+with h5py.File('experiments/data_tumor_size5_large.h5', 'r') as hf:
 	keys = list(hf.keys())
 	print(keys)
 
@@ -70,9 +70,9 @@ with h5py.File('experiments/data_tumor_size10_large.h5', 'r') as hf:
 	print(total_records)
 	print([hf[i].shape[0] for i in temp])
 
-'''
+
 data = {}
-hf = h5py.File('experiments/data_tumor_TEST_batch.h5', 'r')
+hf = h5py.File('experiments/data_tumor_size5_large.h5', 'r')
 print([key for key in hf.keys()])
 print('--------------DATA KEYS------------------')
 for key in hf.keys():
@@ -99,7 +99,7 @@ for d in list(data.keys()):
 ix = 9
 plt.imshow(np.abs(np.rot90(data[key][ix])), cmap = 'gray')
 plt.show()
-'''
+
 
 '''
 plt.subplot(2,2,1)
