@@ -175,7 +175,7 @@ def get_csf_intensity(data):
 	temp = np.max(vals)
 	return temp
 
-def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05, radius_range = [0.8,1.2]):
+def add_tumor(img, intensity, tumor_option = 'circle', diameter = 0.05, diameter_range = [0.8,1.2]):
 	""" Add a tumor to a 2D image
 
     A tumor is added at a random location, with a random size, and a 
@@ -188,7 +188,7 @@ def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05, radius_ran
 
     Args:
         img (2d numpy array): The image
-        radius (float): A percent of the FOV
+        diameter (float): A percent of the FOV
 
     Returns:
         img (2d numpy array): The image with the tumor
@@ -211,11 +211,11 @@ def add_tumor(img, intensity, tumor_option = 'circle', radius = 0.05, radius_ran
 	z = dist_x*(xx-shift_x)**2 + dist_y*(yy-shift_y)**2
 	
 	# The radius of the circular tumor
-	rad = radius*shape[0]//2
+	rad = diameter*shape[0]//2
 	
 	if tumor_option == 'circle':    	
     	# Size of the tumor region
-		tumor_r = np.random.uniform(radius_range[0], radius_range[1])
+		tumor_r = np.random.uniform(diameter_range[0], diameter_range[1])
     	
 		#m = np.random.uniform(0.9*intensity, intensity)
 		m = intensity

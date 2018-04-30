@@ -40,8 +40,8 @@ params = {'database_name': 		'data_tumor_size5_large',
 		  'sampling_percent': 	1, #0.0625,
 		  'accel_factor':       0, # How to implement this?
 		  'tumor_option':		'circle',
-		  'tumor_radius':       0.05,
-		  'tumor_radius_range': [0.8,1.2]}
+		  'tumor_diameter':      0.05,
+		  'tumor_diameter_range':[0.8,1.2]}
 
 #dataManager.compile_dataset(params)
 
