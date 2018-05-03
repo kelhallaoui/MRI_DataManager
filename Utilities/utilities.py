@@ -11,6 +11,7 @@ import skimage
 import os
 import contextlib
 import tempfile
+# This package seems to introduce some problems on Windows.
 #import medpy.io as mio
 
 def read_CSV(filename, use_cols):
@@ -290,16 +291,27 @@ def get_BRRATS_filemap(directory):
 	return df
 
 def write_data(databases, attributes, filename):
+	""" Writes databases and attributes to a .h5 file
+
+	Args:
+		databases (dic): A dictionary of numpy containers which will be stored in .h5 file
+		attributes (dic): A dictionary of attributes detailing the parameters used to generate
+		                  the data.
+		filename (str): the filename of the .h5 file.
+
+	"""
 	print('writinng data to experiments/{}.h5 ...'.format(filename))
 	if not os.path.exists('experiments/'):
 		os.makedirs('experiments/')
 
 	hf = h5py.File('experiments/'+filename+'.h5', "w")
 
+	# Write the attributes to the .h5 dataset
 	for attribute in attributes:
 		print(attribute, ': ', attributes[attribute])
 		hf.attrs[attribute] = attributes[attribute]
 
+	# Write the data to the database
 	for database in databases:
 		print(database, ': ', databases[database].shape)
 		hf.create_dataset(database, data=databases[database])
@@ -307,6 +319,11 @@ def write_data(databases, attributes, filename):
 	hf.close()
 
 def read_data(filename):
+	""" Read the data from .h5 file
+
+	Args:
+		filename (str): The path to the .h5 file
+	"""
 	hf = h5py.File(filename, 'r')
 	data = {}
 	for key in hf.keys():

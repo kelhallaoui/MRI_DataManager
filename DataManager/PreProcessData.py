@@ -1,3 +1,6 @@
+""" A set of classes used to extract and process the data
+"""
+
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
@@ -25,9 +28,9 @@ def extract_slice(data, slice_ix, orientation = 'axial'):
 		slice_ix = int(slice_ix * len(data[0,0,:]))
 		return data[:,:,slice_ix]
 	elif orientation is 'coronal':
-		pass
+		raise NameError('Coronal orientation not supported.')
 	elif orientation is 'sagittal':
-		pass
+		raise NameError('Coronal orientation not supported.')
 	else:
 		raise NameError('Undefined orientation!')
 
@@ -73,6 +76,8 @@ def generate_synthetic_phase_map(kernel_size = 128, setting = 'sinusoid'):
 		ix = phase_map.shape[0]//2 - kernel_size//2
 		phase_map = phase_map[ix:ix+kernel_size, ix:ix+kernel_size]
 		return phase_map
+	else:
+		raise NameError('Undefined phase map generation setting!')
 
 def inject_phase_map(img, phase_map):
 	""" Add a phase map to a real image
@@ -84,8 +89,8 @@ def inject_phase_map(img, phase_map):
 	Returns
 		(2d complex numpy): Add phase to the image
 	"""
-	def polar2z(r,theta): return r * np.exp( 1j * theta )
-	def z2polar(z): return ( np.abs(z), np.angle(z) )
+	def polar2z(r,theta): return r * np.exp(1j * theta)
+	def z2polar(z): return (np.abs(z), np.angle(z))
 	polar_img = z2polar(img)
 	img = polar2z(polar_img[0], phase_map)
 	return img
@@ -115,7 +120,6 @@ def transform_to_k_space(img, acquisition = 'cartesian', sampling_percent = 1):
 		return k_space
 
 	elif acquisition == 'radial':
-
 		n = img.shape[0]
 		total = int(sampling_percent*n*np.pi/2)
 

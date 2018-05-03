@@ -43,7 +43,7 @@ params = {'database_name': 		'data_tumor_size5_large',
 		  'tumor_diameter':      0.05,
 		  'tumor_diameter_range':[0.8,1.2]}
 
-#dataManager.compile_dataset(params)
+dataManager.compile_dataset(params)
 
 with h5py.File('experiments/data_tumor_size5_large.h5', 'r') as hf:
 	keys = list(hf.keys())

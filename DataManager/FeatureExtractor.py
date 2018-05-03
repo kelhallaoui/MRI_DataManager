@@ -4,7 +4,20 @@ from Utilities.utilities import extract_NIFTI, extract_FigShare, extract_BRATS
 from DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
-	""" Extracts features from a dataCollection
+	""" Extracts features based on different options from a dataset.
+
+	Creates the batches of data which will be stored into an .h5 file. The
+	data must be in numpy containers and returned as a dictionary with each
+	numpy container. 
+
+	For example, if extracting the data for the scans with a simulated tumor
+	the returned containers will be the image, k-space and the pathology label.
+
+	Currently implemented feature extractiosn include:
+	- Tumor simulation
+	- Image space to k-space
+	- Gibbs ringing artifact
+	- Denoising
 
 	Attrs:
 		params (dictionary): contains all the options the user wants for
@@ -23,7 +36,7 @@ class FeatureExtractor(object):
 			filepath (string): path to the data
 
 		Returns:
-			A dictionary with all the data matrices
+			A dictionary with all the data containers as numpy containers
 		"""
 		f = self.extract(subjects, dataset, filepath, metadata=metadata)
 		for data_batch in f:
@@ -38,6 +51,14 @@ class FeatureExtractor(object):
 
 
 	def extract(self, subjects, dataset, filepath, metadata=None):
+		""" Extracts the data for a set of subjects from a database
+
+		Args:
+			subject (list str): A list of the subjects from which to extract the data
+			dataset (str): identifier for the dataset from which to extract the data
+			filepath (str): filepath pointing to the data
+			metadata (dic): additional information which might be needed for the extraction
+		"""
 		# Set containers for the data
 		data_shape = (self.batch_size, self.params['img_shape'], self.params['img_shape'])
 		if self.params['feature_option'] is 'add_tumor':
@@ -83,10 +104,13 @@ class FeatureExtractor(object):
 					elif self.params['feature_option'] is 'denoising':
 						outputs = self.extract_image_noise(data, slice_ix)
 
+					# Fill up the containers for the data after the extraction.
 					for ix, d in enumerate(outputs): data_batch[ix][batch_ix] = d
 
 					print('Subject ID: ', subject_id, '     Slice Index: ', self.params['slice_ix'] + slice_ix*0.003125)
 					batch_ix += 1
+					# If the batch index reaches the desired batch_size we will return the current
+					# data batch.
 					if batch_ix%self.batch_size==0:
 						batch_ix = 0
 						yield data_batch
@@ -120,8 +144,8 @@ class FeatureExtractor(object):
 		label = np.random.randint(0,2)
 		if label == 1: img = add_tumor(img, tumor_intensity,
 									   self.params['tumor_option'],
-									   self.params['tumor_radius'],
-									   self.params['tumor_radius_range'])
+									   self.params['tumor_diameter'],
+									   self.params['tumor_diameter_range'])
 		# Transform to k-space
 		k_space_img = transform_to_k_space(img, acquisition = self.params['acquisition_option'], 
 												sampling_percent = self.params['sampling_percent'])
