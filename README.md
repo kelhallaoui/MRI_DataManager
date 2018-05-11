@@ -47,10 +47,9 @@ The resulting file is a .h5 database that is stored in the experiments folder. T
 ---
 # Acknowledgements
 
-We ask that any works which use this package for feature extraction acknowledge the authors of MRI DataManager Karim El Hallaoui and Anson Leung.
+We ask that any works which uses this package for feature extraction acknowledge the MRI DataManager and its authors.
 
 ---
-
 # Install MedPy for python3
 ```
 sudo pip install nibabel pydicom
