@@ -16,29 +16,33 @@ From a set of datasets this package can extract features and load them into .h5 
 
 # How to use
 
-An example of how to use this code is provided in **main_dataGenerator.py**. First initialize the DataManager object with the location of the data and the datasets you want to extract data from. Then detail the types of features you wish to extract and other required system parameters, then extract these features! For example,
+An example of how to use this code is provided in **main_dataGenerator.py**. First initialize the DataManager object with the location of the data and the datasets you want to extract data from. Then detail the types of features you wish to extract and other required system parameters, then extract these features! 
+
+For example, to extract k-space from the ADNI dataset with simulated tumors you can use the following bit of code. This will take 120 slices from each subject in the ADNI dataset and inject a 5% field of view (FOV) diameter tumor in 50% of the instances. The data will be split into a training, validation and testing set, each of these subsets will be binned into batches to be fed to a machine learning model. 
 
 ```
 dataManager = DataManager(r'C:/Users/.../data/', ['ADNI'])
 
-params = {'database_name':       'data_tumor_size5_large',
+params = {'database_name':       'data_tumor_size5',
           'dataset':             'ADNI',
           'batch_size':          32,
           'feature_option':      'add_tumor',
-          'slice_ix':            0.52, #0.32, #0.52,
+          'slice_ix':            0.52,
           'img_shape':           128,
-          'consec_slices':       120, #120,#30,
+          'consec_slices':       120,
           'num_subjects':        'all',
           'scan_type':           'T2',
           'acquisition_option':  'cartesian',
-          'sampling_percent':    1, #0.0625,
-          'accel_factor':        0, # How to implement this?
+          'sampling_percent':    1, 
+          'accel_factor':        0, 
           'tumor_option':        'circle',
           'tumor_diameter':      0.05,
           'tumor_diameter_range':[0.8,1.2]}
 
 dataManager.compile_dataset(params)
 ```
+
+The resulting file is a .h5 database that is stored in the experiments folder. The extracted features are stored in batches with keys formated as **subset_identifier_ix**, subset is ${train, validation, test}$, the identifier is ${k_space, image, label}$ (this will differ based on the feature_option) and ix is the index of the batch.
 
 ---
 
