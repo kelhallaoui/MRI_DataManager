@@ -2,15 +2,15 @@ import os
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from Utilities.utilities import (
+from src.Utilities.utilities import (
 	extract_NIFTI,
 	read_CSV,
 	write_data,
 	get_FigShare_filemap,
 	get_BRRATS_filemap,
 )
-from DataManager.PreProcessData import *
-from DataManager.FeatureExtractor import *
+from src.DataManager.PreProcessData import *
+from src.DataManager.FeatureExtractor import *
 import numpy as np
 import h5py
 
@@ -160,7 +160,7 @@ class DataManager(object):
 				print('extracting {} data from {} ...'.format(data_split, dataset))
 				subjects = self.data_splits[dataset][ix]
 				hf.attrs['subjects_'+data_split] = subjects
-				f = featureExtractor.extract_features(subjects[0:3], dataset, 
+				f = featureExtractor.extract_features(subjects[0:2], dataset, 
 													  filepath, metadata=self.dataCollection[dataset])
 				for ix, data in enumerate(f):
 					for d in data:

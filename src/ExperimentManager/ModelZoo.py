@@ -3,12 +3,33 @@ from keras.models import Model
 from keras import backend as K
 
 def buildModel(model_name, input_shape):
-	if   model_name is 'basic':            return model_basic(input_shape)
+	if   model_name is 'basic-nn':         return model_basic(input_shape)
+	elif model_name is 'basic-cnn':		   return model_basic_cnn(input_shape)
 	elif model_name is 'inverted_ConvNet': return model_inverted_ConvNet(input_shape)
 	elif model_name is 'autoencoder':      return model_autoencoder(input_shape)
 
 def model_basic(input_shape):
 	pass
+
+def model_basic_cnn(input_shape):
+	input_shape = input_shape + (2,)
+	img_size = 128
+	num_classes = 2
+
+	input_img = Input(shape=input_shape)
+	x = Conv2D(32, kernel_size=(3, 3), 
+		       activation='relu',
+               padding = 'same')(input_img)
+    x = Conv2D(64, (3, 3), padding = 'same', activation='relu')(x)
+    x = MaxPooling2D(pool_size=(2, 2))(x)
+    x = Dropout(0.5)(x)
+    x = Flatten()(x)
+    x = Dense(64, activation='relu')(x)
+    x = Dropout(0.5)(x)
+    model = Dense(num_classes, activation='softmax')(x)
+	model.compile(loss=keras.losses.categorical_crossentropy,
+              	  optimizer=keras.optimizers.Adadelta(),
+              	  metrics=['accuracy'])
 
 def model_inverted_ConvNet(input_shape):
 	""" Inverted ConvNet

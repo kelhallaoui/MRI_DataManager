@@ -1,7 +1,7 @@
 import numpy as np
 import zipfile
-from Utilities.utilities import extract_NIFTI, extract_FigShare, extract_BRATS
-from DataManager.PreProcessData import *
+from src.Utilities.utilities import extract_NIFTI, extract_FigShare, extract_BRATS
+from src.DataManager.PreProcessData import *
 
 class FeatureExtractor(object):
 	""" Extracts features based on different options from a dataset.
@@ -88,7 +88,7 @@ class FeatureExtractor(object):
 			if zipfile.is_zipfile(zip_filename):
 
 				if dataset == 'ADNI':
-					data, aff, hdr = extract_NIFTI(filepath, subject_id, self.params['scan_type'])
+					data = extract_NIFTI(filepath, subject_id, self.params['scan_type'])
 				elif dataset == 'FigShare':
 					raise NameError('Feature Extraction not implemented for FigShare data!')
 				elif dataset == 'BRATS':

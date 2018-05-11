@@ -1,11 +1,11 @@
 import numpy as np 
 import h5py
-from DataManager.DataManager import DataManager
-from Utilities.utilities import extract_NIFTI, extract_FigShare
+from src.Utilities.utilities import extract_NIFTI, extract_FigShare
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from DataManager.FeatureExtractor import *
+from src.DataManager.FeatureExtractor import *
+from src.DataManager.DataManager import *
 
 '''
 #Example to extract FigShare Dataset
