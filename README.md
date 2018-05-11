@@ -42,7 +42,12 @@ params = {'database_name':       'data_tumor_size5',
 dataManager.compile_dataset(params)
 ```
 
-The resulting file is a .h5 database that is stored in the experiments folder. The extracted features are stored in batches with keys formated as **subset_identifier_ix**, subset is ${train, validation, test}$, the identifier is ${k_space, image, label}$ (this will differ based on the feature_option) and ix is the index of the batch.
+The resulting file is a .h5 database that is stored in the experiments folder. The extracted features are stored in batches with keys formated as **subset_identifier_ix**, subset is {train, validation, test}, the identifier is {k_space, image, label} (this will differ based on the feature_option) and ix is the index of the batch.
+
+---
+# Acknowledgements
+
+We ask that any works which use this package for feature extraction acknowledge the authors of MRI DataManager Karim El Hallaoui and Anson Leung.
 
 ---
 
