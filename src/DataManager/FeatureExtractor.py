@@ -1,3 +1,9 @@
+"""
+Feature Extractor
+
+A class to extract features from MRI data and ready to be stored into a database file.
+"""
+
 import numpy as np
 import zipfile
 from src.Utilities.utilities import extract_NIFTI, extract_FigShare, extract_BRATS
@@ -89,6 +95,8 @@ class FeatureExtractor(object):
 
 				if dataset == 'ADNI':
 					data = extract_NIFTI(filepath, subject_id, self.params['scan_type'])
+					# Get the intensity of the CSF from the full image
+					tumor_intensity = 255*get_csf_intensity(data)/np.max(np.abs(data))
 				elif dataset == 'FigShare':
 					raise NameError('Feature Extraction not implemented for FigShare data!')
 				elif dataset == 'BRATS':
@@ -96,7 +104,7 @@ class FeatureExtractor(object):
 
 				for slice_ix in range(self.params['consec_slices']):
 					if self.params['feature_option'] is 'add_tumor':
-						outputs = self.extract_image_add_tumor(data, slice_ix)
+						outputs = self.extract_image_add_tumor(data, slice_ix, tumor_intensity)
 					elif self.params['feature_option'] is 'image_and_k_space':
 						outputs = self.extract_image_and_k_space(data, slice_ix)
 					elif self.params['feature_option'] is 'image_and_gibbs':
@@ -124,7 +132,7 @@ class FeatureExtractor(object):
 	# Image with or without tumor, associated k_space and labels
 	#
 	##########################################################################################
-	def extract_image_add_tumor(self, data, slice_ix):
+	def extract_image_add_tumor(self, data, slice_ix, tumor_intensity):
 		""" Extracts the image space and k-space data
 
 		Args:
@@ -135,8 +143,6 @@ class FeatureExtractor(object):
 			img: The complex image space
 			k_space_img: The complex k-space
 		"""
-		# Get the tumor intensity to be close to the CSF
-		tumor_intensity = 255*get_csf_intensity(data)/np.max(np.abs(data))
 		# Extract the slice
 		img = extract_slice(data, self.params['slice_ix'] + slice_ix*0.003125)
 		img = resize_image(img, self.params['img_shape'])

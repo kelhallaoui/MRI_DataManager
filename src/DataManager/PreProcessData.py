@@ -1,6 +1,8 @@
-""" A set of classes used to extract and process the data
-"""
+""" 
+PreProcessData
 
+A set of functions used to extract and process MRI data.
+"""
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
@@ -9,7 +11,7 @@ from pynufft.pynufft import NUFFT_cpu
 from copy import deepcopy
 import numpy as np
 import scipy as scipy
-import scipy.ndimage
+import scipy.ndimage as ndimage
 
 def extract_slice(data, slice_ix, orientation = 'axial'):
 	""" Extract a slice from a volumetric image
@@ -63,7 +65,11 @@ def generate_synthetic_phase_map(kernel_size = 128, setting = 'sinusoid'):
 	Return
 		2D matrix containing a synthetic phase map range = [-pi, pi]
 	"""
-	if setting is 'sinusoid':
+	if setting == 'constant':
+		# Generates a constant phase with a value between 0 and 2pi 
+		phase_map = np.full((kernel_size, kernel_size), np.random.randint(0,2*np.pi))
+		return phase_map
+	elif setting == 'sinusoid':
 		ix_x, ix_y = ((np.indices((2*kernel_size, 2*kernel_size)) - kernel_size) / (kernel_size)) 
 		freq_x, freq_y = 2 * np.random.random((1,)), 2 * np.random.random((1,))
 
@@ -72,7 +78,7 @@ def generate_synthetic_phase_map(kernel_size = 128, setting = 'sinusoid'):
 		# Rotate the phase map by a random angle, this will reshape the image
 		# We thus extract the center of the image
 		rot_angle = 360 * np.random.random((1,))
-		phase_map = scipy.ndimage.interpolation.rotate(phase_map, rot_angle, reshape = True)
+		phase_map = ndimage.interpolation.rotate(phase_map, rot_angle, reshape = True)
 		ix = phase_map.shape[0]//2 - kernel_size//2
 		phase_map = phase_map[ix:ix+kernel_size, ix:ix+kernel_size]
 		return phase_map
@@ -89,8 +95,9 @@ def inject_phase_map(img, phase_map):
 	Returns
 		(2d complex numpy): Add phase to the image
 	"""
-	def polar2z(r,theta): return r * np.exp(1j * theta)
-	def z2polar(z): return (np.abs(z), np.angle(z))
+	polar2z = lambda r, theta: r * np.exp(1j * theta)
+	z2polar = lambda z: (np.abs(z), np.angle(z))
+    
 	polar_img = z2polar(img)
 	img = polar2z(polar_img[0], phase_map)
 	return img
@@ -171,15 +178,22 @@ def get_csf_intensity(data):
 	Returns:
 		The intensity value of the CSF
 	"""
+
+	'''
 	shape = data.shape
 	vals = data[shape[0]//4:3*shape[0]//4,
                 shape[1]//4:3*shape[1]//4,
                 shape[2]//4:3*shape[2]//4].flatten()
-	#temp = np.mean(np.sort(vals)[::-1][0:int(percentage*vals.shape[0])])
-	temp = np.max(vals)
+	temp = np.mean(np.sort(vals)[::-1][0:1])
 	return temp
+	'''
+	data = ndimage.gaussian_filter(data, sigma=(0.5, 0.5, 0.5), order=0)
+	vals = data.flatten()
+	vals[::-1].sort()
+	return np.mean(vals[0:2])
 
-def add_tumor(img, intensity, tumor_option = 'circle', diameter = 0.05, diameter_range = [0.8,1.2]):
+def add_tumor(img, intensity, tumor_option = 'circle', diameter = 0.05, 
+	               diameter_range = [0.8,1.2], intensity_range = [0.9,1]):
 	""" Add a tumor to a 2D image
 
     A tumor is added at a random location, with a random size, and a 
@@ -221,13 +235,17 @@ def add_tumor(img, intensity, tumor_option = 'circle', diameter = 0.05, diameter
     	# Size of the tumor region
 		tumor_r = np.random.uniform(diameter_range[0], diameter_range[1])
     	
-		#m = np.random.uniform(0.9*intensity, intensity)
-		m = intensity
+    	# Tumor intesity
+		m = np.random.uniform(intensity_range[0] * intensity, 
+			                  intensity_range[1] * intensity)
 		img[z<int((tumor_r * rad)**2)] = m
     	
     	# Add a smoothing function to the real and imaginary part 
-		#img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
-    	#                                                            0.5, mode='constant')
+		dist_x, dist_y= np.random.uniform(0.8, 1.2), np.random.uniform(0.8, 1.2)
+		z = dist_x*(xx-shift_x)**2 + dist_y*(yy-shift_y)**2
+		img[z<int(4*(rad)**2)] = ndimage.filters.gaussian_filter(img[z<int(4*(rad)**2)], 
+																	 sigma = 1,
+																	 mode='constant')
 		return img
 
 	elif tumor_option == 'ring':	
@@ -244,7 +262,7 @@ def add_tumor(img, intensity, tumor_option = 'circle', diameter = 0.05, diameter
 		img[z<int(tumor_r*rad**2)] = tumor*m
 		
 		# Add a smoothing function to the real and imaginary part 
-		img[z<int(4*rad**2)] = scipy.ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
+		img[z<int(4*rad**2)] = ndimage.filters.gaussian_filter(img[z<int(4*rad**2)], 
 																 2, mode='constant')
 		return img
 

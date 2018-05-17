@@ -1,3 +1,8 @@
+"""
+Data Manager 
+
+A class to facilitate accessing data and compiling datasets
+"""
 import os
 import matplotlib
 matplotlib.use('TkAgg')
@@ -160,7 +165,7 @@ class DataManager(object):
 				print('extracting {} data from {} ...'.format(data_split, dataset))
 				subjects = self.data_splits[dataset][ix]
 				hf.attrs['subjects_'+data_split] = subjects
-				f = featureExtractor.extract_features(subjects[0:2], dataset, 
+				f = featureExtractor.extract_features(subjects, dataset, 
 													  filepath, metadata=self.dataCollection[dataset])
 				for ix, data in enumerate(f):
 					for d in data:

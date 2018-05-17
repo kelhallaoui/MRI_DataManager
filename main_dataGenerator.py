@@ -1,10 +1,8 @@
 import numpy as np 
 import h5py
-from src.Utilities.utilities import extract_NIFTI, extract_FigShare
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
-from src.DataManager.FeatureExtractor import *
 from src.DataManager.DataManager import *
 
 '''
@@ -27,23 +25,24 @@ dataManager.compile_dataset(params)
 # Example to extract data from the ADNI dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-params = {'database_name': 		'data_tumor_size5_large',
-		  'dataset': 			'ADNI',
-		  'batch_size':         32,
-		  'feature_option':		'add_tumor',
-		  'slice_ix': 			0.52, #0.32, #0.52,
-		  'img_shape': 			128,
-		  'consec_slices':		120, #120,#30,
-		  'num_subjects': 		'all',
-		  'scan_type': 			'T2',
-		  'acquisition_option':	'cartesian',
-		  'sampling_percent': 	1, #0.0625,
-		  'accel_factor':       0, # How to implement this?
-		  'tumor_option':		'circle',
-		  'tumor_diameter':      0.05,
-		  'tumor_diameter_range':[0.8,1.2]}
+params = {'database_name': 		  'data_tumor_size5_large',
+		  'dataset': 			  'ADNI',
+		  'batch_size':           32,
+		  'feature_option':		  'add_tumor',
+		  'slice_ix': 			  0.32, #0.32, #0.52,
+		  'img_shape': 			  128,
+		  'consec_slices':		  120, #120,#30,
+		  'num_subjects': 		  'all',
+		  'scan_type': 			  'T2',
+		  'acquisition_option':	  'cartesian',
+		  'sampling_percent': 	  1, #0.0625,
+		  'accel_factor':         0, # How to implement this?
+		  'tumor_option':		  'circle',
+		  'tumor_diameter':       0.12,
+		  'tumor_diameter_range': [0.33,1.67],
+		  'tumor_intensity_range':[0.9, 1]}
 
-dataManager.compile_dataset(params)
+#dataManager.compile_dataset(params)
 
 with h5py.File('experiments/data_tumor_size5_large.h5', 'r') as hf:
 	keys = list(hf.keys())
@@ -96,7 +95,7 @@ hf.close()
 print(list(data.keys()))
 for d in list(data.keys()):
 	print(d, data[d].shape)
-ix = 9
+ix = 20
 plt.imshow(np.abs(np.rot90(data[key][ix])), cmap = 'gray')
 plt.show()
 
