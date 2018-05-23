@@ -13,7 +13,6 @@ From a set of datasets this package can extract features and load them into .h5 
 - Image with and without added Gaussian noise in the real and imaginary part of the k-space
 
 
-
 # How to use
 
 An example of how to use this code is provided in **main_dataGenerator.py**. First initialize the DataManager object with the location of the data and the datasets you want to extract data from. Then detail the types of features you wish to extract and other required system parameters, then extract these features! 
@@ -47,7 +46,7 @@ The resulting file is a .h5 database that is stored in the experiments folder. T
 ---
 # Acknowledgements
 
-We ask that any works which uses this package for feature extraction acknowledge the MRI DataManager and its authors.
+We ask that any works which uses this package for feature extraction or training a deep learning model acknowledge the MRI DataManager and its authors.
 
 ---
 # Install MedPy for python3
