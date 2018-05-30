@@ -151,12 +151,13 @@ class FeatureExtractor(object):
 		if label == 1: img = add_tumor(img, tumor_intensity,
 									   self.params['tumor_option'],
 									   self.params['tumor_diameter'],
-									   self.params['tumor_diameter_range'])
+									   self.params['tumor_diameter_range'],
+									   self.params['tumor_intensity_range'])
 
 		if self.params['phase_map'] != 'None':
 			phase_map = generate_synthetic_phase_map(self.params['img_shape'], self.params['phase_map'])
 			img = inject_phase_map(img, phase_map)
-			
+
 		# Transform to k-space
 		k_space_img = transform_to_k_space(img, acquisition = self.params['acquisition_option'], 
 												sampling_percent = self.params['sampling_percent'])

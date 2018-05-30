@@ -25,7 +25,7 @@ dataManager.compile_dataset(params)
 # Example to extract data from the ADNI dataset
 dataManager = DataManager(r'C:/Users/eee/workspace_python/Image Reconstruction/data/', ['ADNI'])
 
-params = {'database_name': 		  'data_tumor_phase_map',
+params = {'database_name': 		  'data_tumor_21_05_2018',
 		  'dataset': 			  'ADNI',
 		  'batch_size':           32,
 		  'feature_option':		  'add_tumor',
@@ -35,15 +35,15 @@ params = {'database_name': 		  'data_tumor_phase_map',
 		  'num_subjects': 		  'all',
 		  'scan_type': 			  'T2',
 		  'acquisition_option':	  'cartesian',
-		  'phase_map':			  'constant', #constant, sinusoid
+		  'phase_map':			  'None', #constant, sinusoid
 		  'sampling_percent': 	  1, #0.0625,
 		  'accel_factor':         0, # How to implement this?
 		  'tumor_option':		  'circle',
-		  'tumor_diameter':       0.12,
-		  'tumor_diameter_range': [0.33,1.67],
-		  'tumor_intensity_range':[0.9, 1]}
+		  'tumor_diameter':       0.10,
+		  'tumor_diameter_range': [0.8,1.2],
+		  'tumor_intensity_range':[0.95, 0.98]}
 
-dataManager.compile_dataset(params)
+#dataManager.compile_dataset(params)
 
 with h5py.File('experiments/' + params['database_name'] + '.h5', 'r') as hf:
 	keys = list(hf.keys())
@@ -96,12 +96,14 @@ hf.close()
 print(list(data.keys()))
 for d in list(data.keys()):
 	print(d, data[d].shape)
-ix = 0
+ix = 7
 plt.imshow(np.abs(np.rot90(data[key][ix])), cmap = 'gray')
 plt.show()
 
+'''
 plt.imshow(np.angle(np.rot90(data[key][ix])), cmap = 'gray')
 plt.show()
+'''
 
 
 '''
